@@ -1,5 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import logoLinkieWhite from '../image/logo-linkie-white.png';
+import logoLinkie from '../image/Linkie.png';
+import bannerIntro from '../image/banner-intro.jpg';
+import bannerWishwall from '../image/banner-wishwall.jpg';
+import bannerCameraFrame from '../image/banner-CameraFrame.jpg';
 
 const events = [
   {
@@ -25,45 +30,21 @@ const events = [
 ];
 
 const LKLogoCard = () => (
-  <div className="w-[88px] h-[88px] bg-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
-    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="aboutGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#00e5ff" />
-          <stop offset="1" stopColor="#e91e8c" />
-        </linearGradient>
-      </defs>
-      {/* Star rays */}
-      <line x1="32" y1="6"  x2="32" y2="14" stroke="#00e5ff" strokeWidth="2" strokeLinecap="round" />
-      <line x1="32" y1="50" x2="32" y2="58" stroke="#e91e8c" strokeWidth="2" strokeLinecap="round" />
-      <line x1="6"  y1="32" x2="14" y2="32" stroke="#e91e8c" strokeWidth="2" strokeLinecap="round" />
-      <line x1="50" y1="32" x2="58" y2="32" stroke="#00e5ff" strokeWidth="2" strokeLinecap="round" />
-      <line x1="12" y1="12" x2="18" y2="18" stroke="#00e5ff" strokeWidth="2" strokeLinecap="round" />
-      <line x1="52" y1="52" x2="46" y2="46" stroke="#e91e8c" strokeWidth="2" strokeLinecap="round" />
-      <line x1="52" y1="12" x2="46" y2="18" stroke="#00e5ff" strokeWidth="2" strokeLinecap="round" />
-      <line x1="12" y1="52" x2="18" y2="46" stroke="#e91e8c" strokeWidth="2" strokeLinecap="round" />
-      {/* L letter */}
-      <path
-        d="M14 20 L14 44 L22 44"
-        stroke="url(#aboutGrad)"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* K letter */}
-      <path
-        d="M27 20 L27 44 M27 32 L42 20 M27 32 L42 44"
-        stroke="url(#aboutGrad)"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+  <div className="w-[104px] h-[104px] bg-white rounded-[32px] flex items-center justify-center flex-shrink-0 shadow-lg p-3 border-3 border-[#00d5ff]">
+    <img
+      src={logoLinkieWhite}
+      alt="Linkie logo"
+      className="w-full h-full object-contain"
+    />
   </div>
 );
 
 export default function HomePage() {
   const navigate = useNavigate();
+
+  const linkieWordClass =
+    'bg-gradient-to-r from-[#e253b1] via-[#7f74d1] to-[#4eb8ee] bg-clip-text text-transparent';
+
   return (
     <div className="bg-[#0a0a1a] min-h-screen text-white pb-20">
       <Navbar />
@@ -71,7 +52,7 @@ export default function HomePage() {
       {/* ── Hero ─────────────────────────────────────── */}
       <section className="relative h-[65vh] overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=800&q=80"
+          src={bannerIntro}
           alt="Concert"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -95,7 +76,7 @@ export default function HomePage() {
 
         <div className="flex items-start gap-4 mb-5">
           <div className="flex-1">
-            <h3 className="text-2xl font-extrabold text-[#e91e8c] mb-2">Linkie</h3>
+            <img src={logoLinkie} alt="Linkie" className="h-15 w-auto mb-2" />
             <p className="text-xs text-gray-400 leading-relaxed">
               Linkie là nền tảng kết nối tương tác trực tiếp tại sự kiện thông qua công nghệ
               Camera và Wishwall, giúp biến mỗi cá nhân trở thành một phần di sản của không
@@ -105,7 +86,7 @@ export default function HomePage() {
           <LKLogoCard />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 pt-3">
           {[
             {
               label: 'Tầm nhìn',
@@ -116,11 +97,14 @@ export default function HomePage() {
               text: 'Xóa nhòa khoảng cách giữa khán giả và sân khấu thông qua những điểm chạm công nghệ sáng tạo.',
             },
           ].map(({ label, text }) => (
-            <div key={label} className="border border-[#00bcd4]/40 rounded-2xl p-4">
-              <span className="inline-block border border-[#00bcd4] text-[#00bcd4] text-[11px] font-semibold px-3 py-1 rounded-full mb-3">
+            <div
+              key={label}
+              className="relative rounded-2xl bg-[#273556] px-3.5 pb-3.5 pt-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+            >
+              <span className="absolute left-1/2 -top-3 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#00d8ff] bg-gradient-to-r from-[#06d4ff] to-[#e347af] px-4 py-1 text-[11px] font-bold text-white leading-none shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
                 {label}
               </span>
-              <p className="text-[11px] text-gray-400 leading-relaxed">{text}</p>
+              <p className="text-[10px] text-[#d7e1ff] leading-relaxed">{text}</p>
             </div>
           ))}
         </div>
@@ -132,27 +116,61 @@ export default function HomePage() {
       </section>
 
       {/* ── WishWall Feature Banner ───────────────────── */}
-      <section className="relative overflow-hidden mb-2">
-        <img
-          src="https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&w=800&q=80"
-          alt="WishWall"
-          className="w-full h-52 object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/25" />
-        <div className="absolute inset-0 p-5 flex flex-col justify-center">
-          <h3 className="text-4xl font-black text-white mb-1 tracking-widest">WISHWALL</h3>
-          <p className="text-xs text-gray-300 mb-5">Trở thành một phần của bữa tiệc âm nhạc</p>
-          <div className="flex gap-6">
-            {['Nhập tin nhắn', 'Bấm gửi', 'Hiện thị trên LED'].map((label, i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5">
-                <div className="w-10 h-10 rounded-full border-[2.5px] border-[#e91e8c] bg-[#e91e8c]/20 flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">{i + 1}</span>
+      <section className="px-5 pb-2">
+        <div className="relative overflow-hidden rounded-3xl border border-[#00bcd4]/25">
+          <img
+            src={bannerWishwall}
+            alt="WishWall"
+            className="w-full h-72 object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
+          <div className="absolute inset-0 p-5 flex flex-col justify-end">
+            <h3 className="text-4xl font-black text-white mb-1 tracking-wide">WISHWALL</h3>
+            <p className="text-xs text-gray-200 mb-5">Trở thành một phần của bữa tiệc âm nhạc</p>
+            <div className="flex gap-6">
+              {['Nhập tin nhắn', 'Bấm gửi', 'Hiển thị trên LED'].map((label, i) => (
+                <div key={label} className="flex flex-col items-center gap-1.5">
+                  <div className="w-10 h-10 rounded-full border-[2.5px] border-[#00e5ff] bg-[#00e5ff]/20 flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">{i + 1}</span>
+                  </div>
+                  <span className="text-white text-[10px] text-center leading-tight max-w-[62px]">
+                    {label}
+                  </span>
                 </div>
-                <span className="text-white text-[10px] text-center leading-tight max-w-[60px]">
-                  {label}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Camera Frame Feature Banner ───────────────── */}
+      <section className="px-5 pb-2">
+        <div className="relative overflow-hidden rounded-3xl border border-[#00bcd4]/25">
+          <img
+            src={bannerCameraFrame}
+            alt="Camera Frame"
+            className="w-full h-72 object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
+
+          <div className="absolute inset-0 p-5 flex flex-col justify-end">
+            <h3 className="text-4xl font-black text-white mb-1 tracking-wide">CAMERA FRAME</h3>
+            <p className="text-xs text-gray-200 mb-5">
+              Lưu giữ khoảnh khắc cùng Frame độc quyền
+            </p>
+
+            <div className="flex gap-6">
+              {['Chọn Frame', 'Chụp ảnh', 'Lưu và chia sẻ'].map((label, i) => (
+                <div key={label} className="flex flex-col items-center gap-1.5">
+                  <div className="w-10 h-10 rounded-full border-[2.5px] border-[#00e5ff] bg-[#00e5ff]/20 flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">{i + 1}</span>
+                  </div>
+                  <span className="text-white text-[10px] text-center leading-tight max-w-[62px]">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -213,7 +231,7 @@ export default function HomePage() {
 
       {/* ── Footer ───────────────────────────────────── */}
       <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
-        <p className="text-[#e91e8c] font-extrabold text-lg leading-none">Linkie</p>
+        <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
         <p className="text-gray-500 text-[10px] mt-0.5">
           Xóa nhòa khoảng cách giữa sân khấu và khán giả.
         </p>
