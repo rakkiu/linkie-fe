@@ -1,54 +1,111 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
+import type { WishwallMessage, WishwallPendingMessage } from '../types/wishwall';
 
-const eventNames: Record<number, string> = {
-  1: 'Nights Festival',
-  2: 'Fireworks Festival',
-};
+// ── Bubble model ─────────────────────────────────────────────────────────────
 
 interface Bubble {
-  id: number;
+  id: string;        // message guid (or temp id for optimistic bubble)
   text: string;
-  x: number; // percentage 10–70
+  x: number;         // percentage 10–65
   startY: number;
+  isPending: boolean; // true = waiting for approval (dim style)
 }
 
-let nextId = 1;
-
 export default function WishwallPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: eventId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const eventName = eventNames[Number(id)] ?? 'Sự kiện';
 
   const [input, setInput] = useState('');
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [liked, setLiked] = useState(false);
+  const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const connRef = useRef<ReturnType<typeof createWishwallConnection> | null>(null);
 
-  // Remove bubble after animation ends
-  const removeBubble = useCallback((bubbleId: number) => {
-    setBubbles(prev => prev.filter(b => b.id !== bubbleId));
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  const spawnBubble = useCallback((msg: { id: string; message: string }, isPending: boolean) => {
+    setBubbles(prev => [
+      ...prev,
+      {
+        id: msg.id,
+        text: msg.message,
+        x: 10 + Math.random() * 55,
+        startY: 60 + Math.random() * 20,
+        isPending,
+      },
+    ]);
   }, []);
 
-  const sendMessage = useCallback(() => {
-    const text = input.trim();
-    if (!text) return;
+  const removeBubble = useCallback((id: string) => {
+    setBubbles(prev => prev.filter(b => b.id !== id));
+  }, []);
 
-    const bubble: Bubble = {
-      id: nextId++,
-      text,
-      x: 10 + Math.random() * 55, // random left position 10%–65%
-      startY: 60 + Math.random() * 20, // start near bottom of wall area
+  // ── On mount: load history + connect SignalR ───────────────────────────────
+
+  useEffect(() => {
+    if (!eventId) return;
+
+    // 1. Load last 10 approved messages as initial bubbles
+    wishwallApi.getMessages(eventId).then(res => {
+      const messages: WishwallMessage[] = (res.data as any)?.data ?? [];
+      messages.slice(0, 10).forEach(m =>
+        spawnBubble({ id: m.id, message: m.message }, false),
+      );
+    }).catch(() => { /* non-critical */ });
+
+    // 2. Set up SignalR
+    const conn = createWishwallConnection();
+    connRef.current = conn;
+
+    // Approved message → show bubble for everyone in this event
+    conn.on('MessageApproved', (msg: WishwallMessage) => {
+      spawnBubble({ id: msg.id, message: msg.message }, false);
+    });
+
+    // Pending confirm → sent only to the author; bubble already shown optimistically
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    conn.on('MessagePending', (_msg: WishwallPendingMessage) => {
+      // Could show a toast: "Tin nhắn đang chờ duyệt"
+    });
+
+    conn.start()
+      .then(() => conn.invoke('JoinEvent', eventId))
+      .catch(err => console.warn('SignalR connection failed:', err));
+
+    return () => {
+      conn.invoke('LeaveEvent', eventId).catch(() => {});
+      conn.stop();
     };
+  }, [eventId, spawnBubble]);
 
-    setBubbles(prev => [...prev, bubble]);
+  // ── Send message ───────────────────────────────────────────────────────────
+
+  const handleSend = useCallback(async () => {
+    const text = input.trim();
+    if (!text || !eventId || sending) return;
+
+    const tempId = `temp-${Date.now()}`;
+    spawnBubble({ id: tempId, message: text }, true);
     setInput('');
+    setSending(true);
     inputRef.current?.focus();
-  }, [input]);
+
+    try {
+      await wishwallApi.sendMessage(eventId, text);
+    } catch (err) {
+      removeBubble(tempId);
+      console.error('Failed to send message', err);
+    } finally {
+      setSending(false);
+    }
+  }, [input, eventId, sending, spawnBubble, removeBubble]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter') handleSend();
   };
 
   return (
@@ -66,13 +123,13 @@ export default function WishwallPage() {
           </svg>
           <span className="text-base font-bold">Wishwall</span>
         </button>
-        <p className="text-gray-400 text-sm pl-6">{eventName}</p>
+        <p className="text-gray-400 text-sm pl-6">Sự kiện</p>
       </div>
 
       {/* ── Event info card ─────────────────────────── */}
       <div className="mx-4 mt-2 mb-1 bg-[#141b2d] rounded-2xl px-4 py-3 flex items-start justify-between">
         <div>
-          <p className="text-white font-bold text-sm">{eventName}</p>
+          <p className="text-white font-bold text-sm">Wishwall</p>
           <div className="flex items-center gap-4 mt-1.5">
             <span className="flex items-center gap-1 text-gray-400 text-xs">
               {/* Play / view icon */}
@@ -129,8 +186,8 @@ export default function WishwallPage() {
             className="flex-1 bg-transparent text-white text-sm placeholder-gray-500 outline-none"
           />
           <button
-            onClick={sendMessage}
-            disabled={!input.trim()}
+            onClick={handleSend}
+            disabled={!input.trim() || sending}
             className="text-gray-400 hover:text-white disabled:opacity-30 transition-colors"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -160,7 +217,7 @@ export default function WishwallPage() {
 // ── Floating bubble sub-component ──────────────────────────────────────────────
 interface FloatingBubbleProps {
   bubble: Bubble;
-  onDone: (id: number) => void;
+  onDone: (id: string) => void;
 }
 
 function FloatingBubble({ bubble, onDone }: FloatingBubbleProps) {
@@ -173,9 +230,9 @@ function FloatingBubble({ bubble, onDone }: FloatingBubbleProps) {
     // Animate: float up ~260px, fade out over 3.5s
     const anim = el.animate(
       [
-        { transform: 'translateY(0px)', opacity: 1 },
-        { transform: 'translateY(-80px)', opacity: 0.9, offset: 0.3 },
-        { transform: 'translateY(-200px)', opacity: 0.4, offset: 0.75 },
+        { transform: 'translateY(0px)', opacity: bubble.isPending ? 0.5 : 1 },
+        { transform: 'translateY(-80px)', opacity: bubble.isPending ? 0.4 : 0.9, offset: 0.3 },
+        { transform: 'translateY(-200px)', opacity: bubble.isPending ? 0.2 : 0.4, offset: 0.75 },
         { transform: 'translateY(-300px)', opacity: 0 },
       ],
       { duration: 3500, easing: 'ease-out', fill: 'forwards' }
@@ -183,7 +240,7 @@ function FloatingBubble({ bubble, onDone }: FloatingBubbleProps) {
 
     anim.onfinish = () => onDone(bubble.id);
     return () => anim.cancel();
-  }, [bubble.id, onDone]);
+  }, [bubble.id, bubble.isPending, onDone]);
 
   return (
     <div
@@ -192,9 +249,13 @@ function FloatingBubble({ bubble, onDone }: FloatingBubbleProps) {
       style={{
         left: `${bubble.x}%`,
         bottom: `${bubble.startY}px`,
-        background: 'linear-gradient(135deg, #0e7490cc, #164e63cc)',
+        background: bubble.isPending
+          ? 'linear-gradient(135deg, #374151cc, #1f2937cc)'
+          : 'linear-gradient(135deg, #0e7490cc, #164e63cc)',
         backdropFilter: 'blur(4px)',
-        border: '1px solid rgba(6,182,212,0.4)',
+        border: bubble.isPending
+          ? '1px solid rgba(156,163,175,0.3)'
+          : '1px solid rgba(6,182,212,0.4)',
         maxWidth: '65%',
         whiteSpace: 'nowrap',
         overflow: 'hidden',

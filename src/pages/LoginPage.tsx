@@ -28,8 +28,10 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate('/');
-    } catch {
-      setError('Email hoặc mật khẩu không đúng.');
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg ?? 'Email hoặc mật khẩu không đúng.');
     } finally {
       setLoading(false);
     }
@@ -115,8 +117,15 @@ export default function LoginPage() {
           </div>
         </form>
 
+        {/* Forgot password link */}
+        <p className="text-gray-500 text-xs text-center mt-3">
+          <Link to="/forgot-password" className="text-[#00bcd4] hover:underline">
+            Quên mật khẩu?
+          </Link>
+        </p>
+
         {/* Register link */}
-        <p className="text-gray-500 text-xs text-center mt-5">
+        <p className="text-gray-500 text-xs text-center mt-3">
           Bạn chưa có tài khoản?{' '}
           <Link to="/register" className="text-[#00bcd4] hover:underline">
             Đăng ký ngay
