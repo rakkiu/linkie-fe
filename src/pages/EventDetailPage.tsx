@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../lib/axios';
 import Navbar from '../components/Navbar';
 
 interface ApiEvent {
@@ -37,7 +37,7 @@ export default function EventDetailPage() {
   useEffect(() => {
     if (!id) return;
     // Reuse the events list and find the matching one by id
-    axios
+    axiosInstance
       .get<ApiResponse<ApiEvent[]>>('/api/events')
       .then(res => {
         const found = (res.data.data ?? []).find(e => e.id === id) ?? null;

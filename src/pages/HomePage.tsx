@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../lib/axios';
 import Navbar from '../components/Navbar';
 
 interface ApiEvent {
@@ -89,7 +89,7 @@ export default function HomePage() {
   const [events, setEvents] = useState<EventItem[]>([]);
 
   useEffect(() => {
-    axios
+    axiosInstance
       .get<ApiResponse<ApiEvent[]>>('/api/events')
       .then(res => {
         setEvents((res.data.data ?? []).map(mapApiEvent));

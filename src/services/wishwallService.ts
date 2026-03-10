@@ -1,55 +1,26 @@
 import * as signalR from '@microsoft/signalr';
-import axios from 'axios';
+import axiosInstance from '../lib/axios';
 import type { PendingWishwallMessage, WishwallMessage } from '../types/wishwall';
 
 // ── REST ──────────────────────────────────────────────────────────────────────
 
 export const wishwallApi = {
   getMessages: (eventId: string) =>
-    axios.get<{ data: WishwallMessage[] }>(`/api/events/${eventId}/wishwall`),
+    axiosInstance.get<{ data: WishwallMessage[] }>(`/api/events/${eventId}/wishwall`),
 
   sendMessage: (eventId: string, message: string) =>
-    axios.post(
-      `/api/events/${eventId}/wishwall`,
-      { message },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token') ?? ''}`,
-        },
-      },
-    ),
+    axiosInstance.post(`/api/events/${eventId}/wishwall`, { message }),
 
   approveMessage: (eventId: string, messageId: string) =>
-    axios.patch(
-      `/api/events/${eventId}/wishwall/${messageId}/approve`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token') ?? ''}`,
-        },
-      },
-    ),
+    axiosInstance.patch(`/api/events/${eventId}/wishwall/${messageId}/approve`, {}),
 
   getPendingMessages: (eventId: string) =>
-    axios.get<{ data: PendingWishwallMessage[] }>(
+    axiosInstance.get<{ data: PendingWishwallMessage[] }>(
       `/api/events/${eventId}/wishwall/pending`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token') ?? ''}`,
-        },
-      },
     ),
 
   displayOnLed: (eventId: string, messageId: string) =>
-    axios.post(
-      `/api/events/${eventId}/wishwall/${messageId}/display`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token') ?? ''}`,
-        },
-      },
-    ),
+    axiosInstance.post(`/api/events/${eventId}/wishwall/${messageId}/display`, {}),
 };
 
 // ── SignalR Hub connection ────────────────────────────────────────────────────
