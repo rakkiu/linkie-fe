@@ -1,10 +1,18 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import Navbar from '../components/Navbar';
 
-const events: Record<number, { name: string; status: 'live' | 'upcoming' }> = {
-  1: { name: 'Nights Festival', status: 'live' },
-  2: { name: 'Fireworks Festival', status: 'upcoming' },
-};
+interface ApiEvent {
+  id: string;
+  name: string;
+  status: 'Upcoming' | 'Ongoing' | 'Finished';
+}
+
+interface ApiResponse<T> {
+  statusCode: number;
+  data: T;
+}
 
 const CameraIcon = () => (
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -23,7 +31,29 @@ const WishwallIcon = () => (
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const event = events[Number(id)];
+  const [event, setEvent] = useState<ApiEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    // Reuse the events list and find the matching one by id
+    axios
+      .get<ApiResponse<ApiEvent[]>>('/api/events')
+      .then(res => {
+        const found = (res.data.data ?? []).find(e => e.id === id) ?? null;
+        setEvent(found);
+      })
+      .catch(() => setEvent(null))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="bg-[#0a0a1a] min-h-screen text-white flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Đang tải…</p>
+      </div>
+    );
+  }
 
   if (!event) {
     return (
