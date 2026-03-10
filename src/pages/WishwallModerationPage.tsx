@@ -24,7 +24,7 @@ export default function WishwallModerationPage() {
     if (!eventId) return;
     try {
       const res = await wishwallApi.getPendingMessages(eventId);
-      const data: PendingWishwallMessage[] = (res.data as any)?.data ?? [];
+      const data: PendingWishwallMessage[] = (res.data as { data: PendingWishwallMessage[] }).data ?? [];
       setMessages(data);
     } catch {
       // silently ignore — toast can be added later

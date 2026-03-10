@@ -50,8 +50,8 @@ export default function WishwallPage() {
     if (!eventId) return;
 
     // 1. Load last 10 approved messages as initial bubbles
-    wishwallApi.getMessages(eventId).then(res => {
-      const messages: WishwallMessage[] = (res.data as any)?.data ?? [];
+    wishwallApi.getMessages(eventId).then((res: { data: { data: WishwallMessage[] } }) => {
+      const messages: WishwallMessage[] = res.data.data ?? [];
       messages.slice(0, 10).forEach(m =>
         spawnBubble({ id: m.id, message: m.message }, false),
       );

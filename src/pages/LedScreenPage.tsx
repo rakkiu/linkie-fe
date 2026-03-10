@@ -4,6 +4,12 @@ import { createWishwallConnection } from '../services/wishwallService';
 import type { LedDisplayMessage, WishwallMessage } from '../types/wishwall';
 import { wishwallApi } from '../services/wishwallService';
 
+interface ApiResponse<T> {
+  statusCode: number;
+  message: string;
+  data: T;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface DisplayItem extends LedDisplayMessage {
@@ -45,8 +51,8 @@ export default function LedScreenPage() {
   // ── Load recent approved messages on mount ───────────────────────────────
   useEffect(() => {
     if (!eventId) return;
-    wishwallApi.getMessages(eventId).then(res => {
-      const msgs: WishwallMessage[] = (res.data as any)?.data ?? [];
+    (wishwallApi.getMessages(eventId) as Promise<{ data: ApiResponse<WishwallMessage[]> }>).then(res => {
+      const msgs: WishwallMessage[] = res.data.data ?? [];
       msgs.slice(0, 8).reverse().forEach(m =>
         addItem({
           id: m.id,

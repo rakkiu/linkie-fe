@@ -7,7 +7,14 @@ interface ApiEvent {
   id: string;
   name: string;
   startTime: string;
-  status: string; // "Active" | "Draft" | "Completed" | "Cancelled"
+  status: 'Upcoming' | 'Ongoing' | 'Finished';
+}
+
+interface ApiResponse<T> {
+  statusCode: number;
+  message: string;
+  data: T;
+  responsedAt: string;
 }
 
 interface EventItem {
@@ -33,7 +40,7 @@ function mapApiEvent(e: ApiEvent, idx: number): EventItem {
     name: e.name,
     year: String(start.getFullYear()),
     image: BANNER_IMAGES[idx % BANNER_IMAGES.length],
-    status: e.status === 'Active' ? 'live' : 'upcoming',
+    status: e.status === 'Ongoing' ? 'live' : 'upcoming',
     month: start.getMonth() + 1,
     day: start.getDate(),
   };
@@ -83,10 +90,9 @@ export default function HomePage() {
 
   useEffect(() => {
     axios
-      .get<{ data: ApiEvent[] }>('/api/events')
+      .get<ApiResponse<ApiEvent[]>>('/api/events')
       .then(res => {
-        const raw: ApiEvent[] = (res.data as any)?.data ?? [];
-        setEvents(raw.map(mapApiEvent));
+        setEvents((res.data.data ?? []).map(mapApiEvent));
       })
       .catch(() => { /* silently ignore — UI shows empty state */ });
   }, []);
