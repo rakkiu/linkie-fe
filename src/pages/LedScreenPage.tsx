@@ -1,14 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { createWishwallConnection } from '../services/wishwallService';
-import type { LedDisplayMessage, WishwallMessage } from '../types/wishwall';
-import { wishwallApi } from '../services/wishwallService';
-
-interface ApiResponse<T> {
-  statusCode: number;
-  message: string;
-  data: T;
-}
+import type { LedDisplayMessage } from '../types/wishwall';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,24 +41,7 @@ export default function LedScreenPage() {
     setItems(prev => [item, ...prev].slice(0, 20)); // keep at most 20
   }, []);
 
-  // ── Load recent approved messages on mount ───────────────────────────────
-  useEffect(() => {
-    if (!eventId) return;
-    (wishwallApi.getMessages(eventId) as Promise<{ data: ApiResponse<WishwallMessage[]> }>).then(res => {
-      const msgs: WishwallMessage[] = res.data.data ?? [];
-      msgs.slice(0, 8).reverse().forEach(m =>
-        addItem({
-          id: m.id,
-          userName: m.userName,
-          message: m.message,
-          sentiment: m.sentiment,
-          createdAt: m.createdAt,
-        }),
-      );
-    }).catch(() => {});
-  }, [eventId, addItem]);
-
-  // ── SignalR ──────────────────────────────────────────────────────────────
+  // ── SignalR: only show messages explicitly pushed to LED ────────────────
   useEffect(() => {
     if (!eventId) return;
 
@@ -73,19 +49,13 @@ export default function LedScreenPage() {
     connRef.current = conn;
 
     conn.start().then(() => {
-      // Join both event group (approved) and led group (explicit push)
-      conn.invoke('JoinEvent', eventId).catch(() => {});
       conn.invoke('JoinLed', eventId).catch(() => {});
     });
 
-    // Receives when organizer clicks "Approve" → shows on all wishwall views
-    conn.on('MessageApproved', (payload: LedDisplayMessage) => addItem(payload));
-
-    // Receives when organizer explicitly clicks "Push to LED"
+    // Only show messages when staff explicitly clicks "Push to LED"
     conn.on('LedDisplay', (payload: LedDisplayMessage) => addItem(payload));
 
     return () => {
-      conn.invoke('LeaveEvent', eventId).catch(() => {});
       conn.invoke('LeaveLed', eventId).catch(() => {});
       conn.stop();
       connRef.current = null;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
 import type { PendingWishwallMessage, WishwallStaffPending } from '../types/wishwall';
@@ -12,7 +12,6 @@ const SENTIMENT_COLOR: Record<string, string> = {
 
 export default function WishwallModerationPage() {
   const { id: eventId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
 
   const [messages, setMessages] = useState<PendingWishwallMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,22 +111,16 @@ export default function WishwallModerationPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white">
       <Navbar />
 
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto px-4 pt-20 pb-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold tracking-tight">Wishwall Moderation</h1>
-          <button
-            onClick={() => navigate(`/events/${eventId}/wishwall/led`)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-sm font-semibold transition"
-          >
-            <span>📺</span> LED Screen
-          </button>
         </div>
 
         {loading ? (
           <p className="text-slate-400 text-center mt-20">Loading pending messages…</p>
         ) : messages.length === 0 ? (
           <div className="text-center mt-20 text-slate-400">
-            <p className="text-4xl mb-3">✅</p>
+            <p className="text-4xl mb-3"></p>
             <p>No pending messages. All clear!</p>
           </div>
         ) : (
