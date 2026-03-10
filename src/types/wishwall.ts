@@ -22,3 +22,22 @@ export interface WishwallStaffPending {
   sentiment: string;
   createdAt: string;
 }
+
+// Item returned by GET /api/events/{id}/wishwall/pending
+export interface PendingWishwallMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  message: string;
+  sentiment: string;
+  createdAt: string;
+}
+
+// Payload of SignalR "LedDisplay" event
+export interface LedDisplayMessage {
+  id: string;
+  userName: string;
+  message: string;
+  sentiment: string;
+  createdAt: string;
+}

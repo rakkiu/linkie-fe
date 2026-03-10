@@ -1,6 +1,6 @@
 import * as signalR from '@microsoft/signalr';
 import axios from 'axios';
-import type { WishwallMessage } from '../types/wishwall';
+import type { PendingWishwallMessage, WishwallMessage } from '../types/wishwall';
 
 // ── REST ──────────────────────────────────────────────────────────────────────
 
@@ -22,6 +22,27 @@ export const wishwallApi = {
   approveMessage: (eventId: string, messageId: string) =>
     axios.patch(
       `/api/events/${eventId}/wishwall/${messageId}/approve`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token') ?? ''}`,
+        },
+      },
+    ),
+
+  getPendingMessages: (eventId: string) =>
+    axios.get<{ data: PendingWishwallMessage[] }>(
+      `/api/events/${eventId}/wishwall/pending`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token') ?? ''}`,
+        },
+      },
+    ),
+
+  displayOnLed: (eventId: string, messageId: string) =>
+    axios.post(
+      `/api/events/${eventId}/wishwall/${messageId}/display`,
       {},
       {
         headers: {
