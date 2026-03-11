@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import axiosInstance from '../lib/axios';
 import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
 import type { WishwallMessage, WishwallPendingMessage } from '../types/wishwall';
 
@@ -14,6 +15,12 @@ interface Bubble {
   isPending: boolean; // true = waiting for approval (dim style)
 }
 
+interface OngoingEvent {
+  id: string;
+  name: string;
+  location?: string;
+}
+
 export default function WishwallPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -24,6 +31,29 @@ export default function WishwallPage() {
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const connRef = useRef<ReturnType<typeof createWishwallConnection> | null>(null);
+
+  // ── Event switcher state ───────────────────────────────────────────────────
+  const [showEventPicker, setShowEventPicker] = useState(false);
+  const [ongoingEvents, setOngoingEvents] = useState<OngoingEvent[]>([]);
+  const [currentEventName, setCurrentEventName] = useState<string>('');
+
+  // Fetch ongoing events when picker opens
+  useEffect(() => {
+    if (!showEventPicker) return;
+    axiosInstance
+      .get<{ data: OngoingEvent[] }>('/api/events?status=Ongoing')
+      .then(res => setOngoingEvents((res.data as { data: OngoingEvent[] }).data ?? []))
+      .catch(() => {});
+  }, [showEventPicker]);
+
+  // Fetch current event name on mount
+  useEffect(() => {
+    if (!eventId) return;
+    axiosInstance
+      .get<{ data: { name: string } }>(`/api/events/${eventId}`)
+      .then(res => setCurrentEventName((res.data as { data: { name: string } }).data?.name ?? ''))
+      .catch(() => {});
+  }, [eventId]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -129,7 +159,7 @@ export default function WishwallPage() {
       {/* ── Event info card ─────────────────────────── */}
       <div className="mx-4 mt-2 mb-1 bg-[#141b2d] rounded-2xl px-4 py-3 flex items-start justify-between">
         <div>
-          <p className="text-white font-bold text-sm">Wishwall</p>
+          <p className="text-white font-bold text-sm truncate max-w-[220px]">{currentEventName || 'Wishwall'}</p>
           <div className="flex items-center gap-4 mt-1.5">
             <span className="flex items-center gap-1 text-gray-400 text-xs">
               {/* Play / view icon */}
@@ -142,12 +172,23 @@ export default function WishwallPage() {
             </span>
           </div>
         </div>
-        <button className="text-gray-400 hover:text-white transition-colors mt-0.5">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-          </svg>
-        </button>
+        <div className="flex items-center gap-2 mt-0.5">
+          <button
+            onClick={() => setShowEventPicker(true)}
+            className="text-purple-400 hover:text-purple-300 transition-colors"
+            title="Đổi sự kiện"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+          </button>
+          <button className="text-gray-400 hover:text-white transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* ── Wishwall bubble area ─────────────────────── */}
@@ -210,6 +251,46 @@ export default function WishwallPage() {
           </svg>
         </button>
       </div>
+
+      {/* ── Event picker bottom sheet ────────────────── */}
+      {showEventPicker && (
+        <div
+          className="fixed inset-0 z-50 flex items-end"
+          onClick={() => setShowEventPicker(false)}
+        >
+          <div
+            className="w-full bg-[#141b2d] rounded-t-2xl p-5 max-h-[60vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white font-bold text-base">Chọn sự kiện</p>
+              <button onClick={() => setShowEventPicker(false)} className="text-gray-400 hover:text-white">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            {ongoingEvents.length === 0 ? (
+              <p className="text-gray-500 text-sm text-center py-6">Không có sự kiện nào đang diễn ra</p>
+            ) : (
+              ongoingEvents.map(ev => (
+                <button
+                  key={ev.id}
+                  onClick={() => { setShowEventPicker(false); navigate(`/events/${ev.id}/wishwall`); }}
+                  className={`w-full text-left px-4 py-3 rounded-xl mb-2 transition-colors ${
+                    ev.id === eventId
+                      ? 'bg-purple-600/30 border border-purple-500/40'
+                      : 'bg-[#1e2433] hover:bg-[#252f45]'
+                  }`}
+                >
+                  <p className="text-white text-sm font-medium">{ev.name}</p>
+                  {ev.location && <p className="text-gray-400 text-xs mt-0.5">{ev.location}</p>}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

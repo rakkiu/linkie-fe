@@ -32,6 +32,11 @@ export default function Navbar() {
           <a href="/#about" className="hover:text-white transition-colors">
             Về chúng tôi
           </a>
+          {user?.role === 'Staff' && (
+            <Link to="/staff/wishwall" className="hover:text-white text-purple-300 transition-colors">
+              Duyệt Wishwall
+            </Link>
+          )}
         </div>
 
         {user ? (

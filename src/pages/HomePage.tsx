@@ -65,9 +65,6 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [events, setEvents] = useState<EventItem[]>([]);
 
-  const linkieWordClass =
-    'bg-gradient-to-r from-[#e253b1] via-[#7f74d1] to-[#4eb8ee] bg-clip-text text-transparent';
-
   useEffect(() => {
     axiosInstance
       .get<ApiResponse<ApiEvent[]>>('/api/events')
