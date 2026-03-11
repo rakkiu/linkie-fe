@@ -73,19 +73,6 @@ export default function WishwallModerationPage() {
   }, [eventId]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
-  const handleApprove = async (msg: PendingWishwallMessage) => {
-    if (!eventId || actionId) return;
-    setActionId(msg.id);
-    try {
-      await wishwallApi.approveMessage(eventId, msg.id);
-      setMessages(prev => prev.filter(m => m.id !== msg.id));
-    } catch {
-      // ignore
-    } finally {
-      setActionId(null);
-    }
-  };
-
   const handleDisplay = async (msg: PendingWishwallMessage) => {
     if (!eventId || actionId) return;
     setActionId(`display-${msg.id}`);
@@ -150,22 +137,13 @@ export default function WishwallModerationPage() {
                 </div>
 
                 <div className="flex gap-2 mt-1">
-                  {/* Approve only — shows on wishwall bubbles */}
-                  <button
-                    disabled={!!actionId}
-                    onClick={() => handleApprove(msg)}
-                    className="flex-1 py-2 rounded-xl bg-teal-600/80 hover:bg-teal-500 text-sm font-semibold transition disabled:opacity-40"
-                  >
-                    {actionId === msg.id ? 'Approving…' : '✓ Approve'}
-                  </button>
-
                   {/* Approve + push straight to LED */}
                   <button
                     disabled={!!actionId}
                     onClick={() => handleDisplay(msg)}
                     className="flex-1 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-500 text-sm font-semibold transition disabled:opacity-40"
                   >
-                    {actionId === `display-${msg.id}` ? 'Pushing…' : '📺 Push to LED'}
+                    {actionId === `display-${msg.id}` ? 'Pushing…' : ' Push to LED'}
                   </button>
 
                   {/* Reject (local only for now) */}
