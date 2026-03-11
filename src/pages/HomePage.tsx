@@ -1,28 +1,50 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../lib/axios';
 import Navbar from '../components/Navbar';
 
-const events = [
-  {
-    id: 1,
-    name: 'NIGHTS FESTIVAL',
-    year: '2026',
-    image:
-      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=800&q=80',
-    status: 'live' as const,
-    month: 3,
-    day: 1,
-  },
-  {
-    id: 2,
-    name: 'FIREWORKS FESTIVAL',
-    year: '2026',
-    image:
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&w=800&q=80',
-    status: 'upcoming' as const,
-    month: 3,
-    day: 3,
-  },
+interface ApiEvent {
+  id: string;
+  name: string;
+  startTime: string;
+  status: 'Upcoming' | 'Ongoing' | 'Finished';
+}
+
+interface ApiResponse<T> {
+  statusCode: number;
+  message: string;
+  data: T;
+  responsedAt: string;
+}
+
+interface EventItem {
+  id: string;
+  name: string;
+  year: string;
+  image: string;
+  status: 'live' | 'upcoming';
+  month: number;
+  day: number;
+}
+
+const BANNER_IMAGES = [
+  'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=800&q=80',
+  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&w=800&q=80',
+  'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&w=800&q=80',
 ];
+
+function mapApiEvent(e: ApiEvent, idx: number): EventItem {
+  const start = new Date(e.startTime);
+  return {
+    id: e.id,
+    name: e.name,
+    year: String(start.getFullYear()),
+    image: BANNER_IMAGES[idx % BANNER_IMAGES.length],
+    status: e.status === 'Ongoing' ? 'live' : 'upcoming',
+    month: start.getMonth() + 1,
+    day: start.getDate(),
+  };
+}
 
 const LKLogoCard = () => (
   <div className="w-[88px] h-[88px] bg-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
@@ -64,6 +86,17 @@ const LKLogoCard = () => (
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [events, setEvents] = useState<EventItem[]>([]);
+
+  useEffect(() => {
+    axiosInstance
+      .get<ApiResponse<ApiEvent[]>>('/api/events')
+      .then(res => {
+        setEvents((res.data.data ?? []).map(mapApiEvent));
+      })
+      .catch(() => { /* silently ignore — UI shows empty state */ });
+  }, []);
+
   return (
     <div className="bg-[#0a0a1a] min-h-screen text-white pb-20">
       <Navbar />

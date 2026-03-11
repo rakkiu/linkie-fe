@@ -1,55 +1,97 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
+import { authService } from '../services/authService';
+import type { AuthUser } from '../types/auth';
 
-interface AuthUser {
-  name: string;
-  email: string;
+// ── Decode JWT payload without verification (browser-side only) ───────────────
+function decodeJwt(token: string): Record<string, string> | null {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
 }
 
+function userFromToken(token: string): AuthUser | null {
+  const claims = decodeJwt(token);
+  if (!claims) return null;
+  return {
+    id: claims['sub'] ?? '',
+    name: claims['FullName'] ?? '',
+    email: claims['email'] ?? '',
+    role: claims['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? claims['role'] ?? '',
+  };
+}
+
+// ── Context types ─────────────────────────────────────────────────────────────
 interface AuthContextType {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// ── Restore user from stored token on page load ───────────────────────────────
+function initUser(): AuthUser | null {
+  const token = localStorage.getItem('access_token');
+  return token ? userFromToken(token) : null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const stored = localStorage.getItem('linkie_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState<AuthUser | null>(initUser);
 
-  useEffect(() => {
-    if (user) localStorage.setItem('linkie_user', JSON.stringify(user));
-    else localStorage.removeItem('linkie_user');
-  }, [user]);
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const login = async (email: string, _password: string) => {
-    // Mock: in real app, call API here
-    const name = email.split('@')[0];
-    setUser({ name, email });
+  const login = async (email: string, password: string) => {
+    const res = await authService.login(email, password);
+    localStorage.setItem('access_token', res.data.accessToken);
+    localStorage.setItem('refresh_token', res.data.refreshToken);
+    setUser(userFromToken(res.data.accessToken));
   };
 
+  // Google OAuth is handled separately; keep stub for UI compatibility
   const loginWithGoogle = async () => {
-    setUser({ name: 'Google User', email: 'user@gmail.com' });
+    throw new Error('Google OAuth is not configured yet.');
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const register = async (name: string, email: string, _password: string) => {
-    setUser({ name, email });
+  const register = async (name: string, email: string, password: string) => {
+    await authService.register(name, email, password);
+    // After registration, log the user in automatically
+    await login(email, password);
   };
 
-  const logout = () => setUser(null);
+  const logout = async () => {
+    const refreshToken = localStorage.getItem('refresh_token') ?? '';
+    try {
+      if (refreshToken) await authService.logout(refreshToken);
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      setUser(null);
+    }
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    await authService.changePassword(currentPassword, newPassword);
+  };
+
+  const forgotPassword = async (email: string) => {
+    await authService.forgotPassword(email);
+  };
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    await authService.resetPassword(token, newPassword);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, login, loginWithGoogle, register, logout, changePassword, forgotPassword, resetPassword }}
+    >
       {children}
     </AuthContext.Provider>
   );
