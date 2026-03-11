@@ -32,8 +32,10 @@ export default function RegisterPage() {
     try {
       await register(name, email, password);
       navigate('/');
-    } catch {
-      setError('Đăng ký thất bại. Vui lòng thử lại.');
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg ?? 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
