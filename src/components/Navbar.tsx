@@ -28,10 +28,6 @@ export default function Navbar() {
         <div className="flex gap-5 text-sm font-medium text-gray-200">
           <Link to="/" className="hover:text-white transition-colors">
             Trang chủ
-
-        <div className="flex gap-5 text-sm font-medium text-gray-200">
-          <Link to="/" className="hover:text-white transition-colors">
-            Trang chủ
           </Link>
           <a href="/#about" className="hover:text-white transition-colors">
             Về chúng tôi
