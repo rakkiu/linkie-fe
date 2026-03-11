@@ -22,6 +22,7 @@ function App() {
           <Route path="/events/:id/camera-frame" element={<CameraFramePage />} />
           <Route path="/events/:id/wishwall" element={<WishwallPage />} />
           <Route path="/events/:id/wishwall/moderation" element={<WishwallModerationPage />} />
+          <Route path="/staff/wishwall" element={<WishwallModerationPage />} />
           <Route path="/events/:id/wishwall/led" element={<LedScreenPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

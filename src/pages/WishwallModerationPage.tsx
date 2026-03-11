@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import axiosInstance from '../lib/axios';
 import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
 import type { PendingWishwallMessage, WishwallStaffPending } from '../types/wishwall';
 
@@ -10,27 +11,58 @@ const SENTIMENT_COLOR: Record<string, string> = {
   Negative: 'text-red-400',
 };
 
-export default function WishwallModerationPage() {
-  const { id: eventId } = useParams<{ id: string }>();
+interface OngoingEvent {
+  id: string;
+  name: string;
+  location?: string;
+  startTime: string;
+}
 
+export default function WishwallModerationPage() {
+  const { id: paramEventId } = useParams<{ id: string }>();
+
+  // If navigated via /staff/wishwall, paramEventId is undefined → show picker
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(paramEventId ?? null);
+  const [selectedEventName, setSelectedEventName] = useState<string>('');
+
+  // ── Event picker state ─────────────────────────────────────────────────────
+  const [ongoingEvents, setOngoingEvents] = useState<OngoingEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(!paramEventId);
+
+  useEffect(() => {
+    if (selectedEventId) return; // already have an event
+    axiosInstance
+      .get<{ data: OngoingEvent[] }>('/api/events?status=Ongoing')
+      .then(res => setOngoingEvents((res.data as { data: OngoingEvent[] }).data ?? []))
+      .catch(() => {})
+      .finally(() => setEventsLoading(false));
+  }, [selectedEventId]);
+
+  const handleSelectEvent = (ev: OngoingEvent) => {
+    setSelectedEventName(ev.name);
+    setSelectedEventId(ev.id);
+  };
+
+  // ── Pending messages state ─────────────────────────────────────────────────
   const [messages, setMessages] = useState<PendingWishwallMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [actionId, setActionId] = useState<string | null>(null); // id of message being actioned
+  const [loading, setLoading] = useState(false);
+  const [actionId, setActionId] = useState<string | null>(null);
   const connRef = useRef<ReturnType<typeof createWishwallConnection> | null>(null);
 
   // ── Load pending messages ──────────────────────────────────────────────────
   const loadPending = useCallback(async () => {
-    if (!eventId) return;
+    if (!selectedEventId) return;
+    setLoading(true);
     try {
-      const res = await wishwallApi.getPendingMessages(eventId);
+      const res = await wishwallApi.getPendingMessages(selectedEventId);
       const data: PendingWishwallMessage[] = (res.data as { data: PendingWishwallMessage[] }).data ?? [];
       setMessages(data);
     } catch {
-      // silently ignore — toast can be added later
+      // silently ignore
     } finally {
       setLoading(false);
     }
-  }, [eventId]);
+  }, [selectedEventId]);
 
   useEffect(() => {
     loadPending();
@@ -38,17 +70,16 @@ export default function WishwallModerationPage() {
 
   // ── SignalR: receive new pending messages in real-time ─────────────────────
   useEffect(() => {
-    if (!eventId) return;
+    if (!selectedEventId) return;
 
     const conn = createWishwallConnection();
     connRef.current = conn;
 
     conn.start().then(() => {
-      conn.invoke('JoinStaff', eventId).catch(() => {});
+      conn.invoke('JoinStaff', selectedEventId).catch(() => {});
     });
 
     conn.on('NewPendingMessage', (payload: WishwallStaffPending) => {
-      // Add to top of list if not already there
       setMessages(prev => {
         if (prev.some(m => m.id === payload.id)) return prev;
         return [
@@ -66,20 +97,19 @@ export default function WishwallModerationPage() {
     });
 
     return () => {
-      conn.invoke('LeaveStaff', eventId).catch(() => {});
+      conn.invoke('LeaveStaff', selectedEventId).catch(() => {});
       conn.stop();
       connRef.current = null;
     };
-  }, [eventId]);
+  }, [selectedEventId]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleDisplay = async (msg: PendingWishwallMessage) => {
-    if (!eventId || actionId) return;
+    if (!selectedEventId || actionId) return;
     setActionId(`display-${msg.id}`);
     try {
-      // Approve first if not yet approved (pending messages are unapproved)
-      await wishwallApi.approveMessage(eventId, msg.id);
-      await wishwallApi.displayOnLed(eventId, msg.id);
+      await wishwallApi.approveMessage(selectedEventId, msg.id);
+      await wishwallApi.displayOnLed(selectedEventId, msg.id);
       setMessages(prev => prev.filter(m => m.id !== msg.id));
     } catch {
       // ignore
@@ -89,26 +119,85 @@ export default function WishwallModerationPage() {
   };
 
   const handleReject = (id: string) => {
-    // Optimistically remove from local list (no delete endpoint yet)
     setMessages(prev => prev.filter(m => m.id !== id));
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Event picker screen ────────────────────────────────────────────────────
+  if (!selectedEventId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white">
+        <Navbar />
+        <div className="max-w-2xl mx-auto px-4 pt-24 pb-8">
+          <h1 className="text-2xl font-bold tracking-tight mb-2">Wishwall Moderation</h1>
+          <p className="text-slate-400 mb-6 text-sm">Chọn sự kiện đang diễn ra để duyệt tin nhắn.</p>
+
+          {eventsLoading ? (
+            <p className="text-slate-400 text-center mt-16">Đang tải sự kiện…</p>
+          ) : ongoingEvents.length === 0 ? (
+            <div className="text-center mt-16 text-slate-400">
+              <p className="text-4xl mb-3">📭</p>
+              <p>Không có sự kiện nào đang diễn ra.</p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {ongoingEvents.map(ev => (
+                <li key={ev.id}>
+                  <button
+                    onClick={() => handleSelectEvent(ev)}
+                    className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500 rounded-2xl px-5 py-4 transition"
+                  >
+                    <p className="font-semibold text-white">{ev.name}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      {ev.location && (
+                        <span className="text-slate-400 text-xs">{ev.location}</span>
+                      )}
+                      <span className="text-xs text-green-400 font-medium">● Đang diễn ra</span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Moderation screen ──────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white">
       <Navbar />
 
       <div className="max-w-3xl mx-auto px-4 pt-20 pb-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold tracking-tight">Wishwall Moderation</h1>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Wishwall Moderation</h1>
+            {selectedEventName && (
+              <p className="text-purple-300 text-sm mt-1">{selectedEventName}</p>
+            )}
+          </div>
+          {/* Allow staff to switch event if they came via /staff/wishwall */}
+          {!paramEventId && (
+            <button
+              onClick={() => {
+                setSelectedEventId(null);
+                setSelectedEventName('');
+                setMessages([]);
+                setEventsLoading(true);
+              }}
+              className="text-xs text-slate-400 hover:text-white underline transition"
+            >
+              Đổi sự kiện
+            </button>
+          )}
         </div>
 
         {loading ? (
-          <p className="text-slate-400 text-center mt-20">Loading pending messages…</p>
+          <p className="text-slate-400 text-center mt-20">Đang tải tin nhắn…</p>
         ) : messages.length === 0 ? (
           <div className="text-center mt-20 text-slate-400">
             <p className="text-4xl mb-3"></p>
-            <p>No pending messages. All clear!</p>
+            <p>Không có tin nhắn chờ duyệt.</p>
           </div>
         ) : (
           <ul className="space-y-3">
@@ -137,16 +226,14 @@ export default function WishwallModerationPage() {
                 </div>
 
                 <div className="flex gap-2 mt-1">
-                  {/* Approve + push straight to LED */}
                   <button
                     disabled={!!actionId}
                     onClick={() => handleDisplay(msg)}
                     className="flex-1 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-500 text-sm font-semibold transition disabled:opacity-40"
                   >
-                    {actionId === `display-${msg.id}` ? 'Pushing…' : ' Push to LED'}
+                    {actionId === `display-${msg.id}` ? 'Đang đẩy…' : '🖥 Push to LED'}
                   </button>
 
-                  {/* Reject (local only for now) */}
                   <button
                     disabled={!!actionId}
                     onClick={() => handleReject(msg.id)}
