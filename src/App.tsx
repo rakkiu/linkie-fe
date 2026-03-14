@@ -20,6 +20,14 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function StaffRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
@@ -42,7 +50,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* Admin Routes */}
+          {/* Admin & Staff Routes */}
           <Route path="/admin" element={
             <AdminRoute>
               <AdminDashboardPage />
@@ -64,9 +72,9 @@ function App() {
             </AdminRoute>
           } />
           <Route path="/admin/events" element={
-            <AdminRoute>
+            <StaffRoute>
               <AdminEventsListPage />
-            </AdminRoute>
+            </StaffRoute>
           } />
         </Routes>
       </BrowserRouter>

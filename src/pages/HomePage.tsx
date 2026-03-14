@@ -1,7 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import logoLinkieWhite from '../image/logo-linkie-white.png';
-import logoLinkie from '../image/Linkie.png';
 import bannerIntro from '../image/banner-intro.jpg';
 import bannerWishwall from '../image/banner-wishwall.jpg';
 import bannerCameraFrame from '../image/banner-CameraFrame.jpg';
@@ -11,8 +9,8 @@ import { eventService, type PublicEvent, getEventStatus } from '../services/even
 const LKLogoCard = () => (
   <div className="w-[104px] h-[104px] bg-white rounded-[32px] flex items-center justify-center flex-shrink-0 shadow-lg p-3 border-3 border-[#00d5ff]">
     <img
-      src={logoLinkieWhite}
-      alt="Linkie logo"
+      src="/image.png"
+      alt="Linkle logo"
       className="w-full h-full object-contain"
     />
   </div>
@@ -71,9 +69,12 @@ export default function HomePage() {
 
         <div className="flex items-start gap-4 mb-5">
           <div className="flex-1">
-            <img src={logoLinkie} alt="Linkie" className="h-15 w-auto mb-2" />
+            <div className="flex items-center gap-2 mb-2">
+              <img src="/image.png" alt="Linkle" className="h-10 w-auto" />
+              <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Linkle</span>
+            </div>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Linkie là nền tảng kết nối tương tác trực tiếp tại sự kiện thông qua công nghệ
+              Linkle là nền tảng kết nối tương tác trực tiếp tại sự kiện thông qua công nghệ
               Camera và Wishwall, giúp biến mỗi cá nhân trở thành một phần di sản của không
               gian nghệ thuật.
             </p>
@@ -236,8 +237,11 @@ export default function HomePage() {
 
       {/* ── Footer ───────────────────────────────────── */}
       <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
-        <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
-        <p className="text-gray-500 text-[10px] mt-0.5">
+        <div className="flex items-center justify-center gap-2 mb-0.5">
+          <img src="/image.png" alt="Linkle" className="h-6 w-auto" />
+          <span className="text-sm font-bold text-[#00bcd4]">Linkle</span>
+        </div>
+        <p className="text-gray-500 text-[10px]">
           Xóa nhòa khoảng cách giữa sân khấu và khán giả.
         </p>
       </footer>

@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 const LKLogo = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
     <circle cx="16" cy="16" r="16" fill="url(#logoGrad)" />
-    <text x="8" y="22" fill="white" fontSize="16" fontWeight="bold" fontFamily="Arial">LK</text>
+    <text x="8" y="22" fill="white" fontSize="16" fontWeight="bold" fontFamily="Arial">LL</text>
     <defs>
       <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32">
         <stop offset="0%" stopColor="#00bcd4" />
@@ -20,7 +20,7 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children, activePage }: AdminLayoutProps) {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -28,13 +28,17 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
     navigate('/login');
   };
 
-  const navItems = [
-    { id: 'dashboard', label: 'DASHBOARD', path: '/admin' },
-    { id: 'events', label: 'EVENTS', path: '/admin/events' },
-    { id: 'fan-insights', label: 'FAN INSIGHTS', path: '/admin/fan-insights' },
-    { id: 'report', label: 'REPORT', path: '/admin/report' },
-    { id: 'create-event', label: 'CREATE EVENT', path: '/admin/create-event' },
-  ] as const;
+  const allNavItems = [
+    { id: 'dashboard', label: 'DASHBOARD', path: '/admin', roles: ['admin'] },
+    { id: 'events', label: 'EVENTS', path: '/admin/events', roles: ['admin', 'staff'] },
+    { id: 'fan-insights', label: 'FAN INSIGHTS', path: '/admin/fan-insights', roles: ['admin'] },
+    { id: 'report', label: 'REPORT', path: '/admin/report', roles: ['admin'] },
+    { id: 'create-event', label: 'CREATE EVENT', path: '/admin/create-event', roles: ['admin'] },
+  ];
+
+  const navItems = allNavItems.filter(item => 
+    user && item.roles.includes(user.role)
+  );
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#0f1221', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
@@ -53,7 +57,7 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', paddingLeft: '4px' }}>
           <LKLogo />
           <div>
-            <div style={{ color: '#00bcd4', fontWeight: 800, fontSize: '13px', lineHeight: 1 }}>Linkie</div>
+            <div style={{ color: '#00bcd4', fontWeight: 800, fontSize: '13px', lineHeight: 1 }}>Linkle</div>
             <div style={{ color: 'white', fontWeight: 700, fontSize: '10px', letterSpacing: '2px' }}>ADMIN</div>
           </div>
         </div>
