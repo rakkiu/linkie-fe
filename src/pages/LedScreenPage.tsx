@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import axiosInstance from '../lib/axios';
 import { createWishwallConnection } from '../services/wishwallService';
 import type { LedDisplayMessage } from '../types/wishwall';
+
+interface OngoingEvent {
+  id: string;
+  name: string;
+  location?: string;
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -46,6 +53,28 @@ const SENTIMENT_TEXT: Record<string, string> = {
 
 export default function LedScreenPage() {
   const { id: eventId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  // ── Event switcher state ───────────────────────────────────────────────────
+  const [showEventPicker, setShowEventPicker] = useState(false);
+  const [ongoingEvents, setOngoingEvents] = useState<OngoingEvent[]>([]);
+  const [currentEventName, setCurrentEventName] = useState<string>('');
+
+  useEffect(() => {
+    if (!eventId) return;
+    axiosInstance
+      .get<{ data: { name: string } }>(`/api/events/${eventId}`)
+      .then(res => setCurrentEventName((res.data as { data: { name: string } }).data?.name ?? ''))
+      .catch(() => {});
+  }, [eventId]);
+
+  useEffect(() => {
+    if (!showEventPicker) return;
+    axiosInstance
+      .get<{ data: OngoingEvent[] }>('/api/events?status=Ongoing')
+      .then(res => setOngoingEvents((res.data as { data: OngoingEvent[] }).data ?? []))
+      .catch(() => {});
+  }, [showEventPicker]);
 
   // React state only drives mount/unmount; physics runs via direct DOM updates
   const [items, setItems] = useState<PhysicsItem[]>([]);
@@ -155,12 +184,67 @@ export default function LedScreenPage() {
           <span className="text-2xl"></span>
           <span className="text-white/80 text-xl font-semibold tracking-wide">Wish Wall</span>
         </div>
-        <span className="text-white/30 text-sm uppercase tracking-widest">Live</span>
+        <button
+          onClick={() => setShowEventPicker(true)}
+          className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors px-3 py-1 rounded-full border border-white/10 hover:border-white/30 max-w-[240px]"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+            <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+          </svg>
+          <span className="truncate">{currentEventName || 'Đổi sự kiện'}</span>
+        </button>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
           <span className="text-teal-400 text-sm font-medium">LIVE</span>
         </div>
       </div>
+
+      {/* Event picker bottom sheet */}
+      {showEventPicker && (
+        <div
+          className="fixed inset-0 z-50 flex items-end"
+          onClick={() => setShowEventPicker(false)}
+        >
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div
+            className="relative w-full bg-[#0a0a1a] border-t border-white/10 rounded-t-3xl px-5 pt-4 pb-8 max-h-[60vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
+            <h2 className="text-white font-bold text-base mb-4">Chọn sự kiện</h2>
+            {ongoingEvents.length === 0 ? (
+              <p className="text-white/30 text-sm text-center py-8">Không có sự kiện nào đang diễn ra.</p>
+            ) : (
+              <ul className="space-y-2">
+                {ongoingEvents.map(ev => (
+                  <li key={ev.id}>
+                    <button
+                      onClick={() => {
+                        setShowEventPicker(false);
+                        navigate(`/events/${ev.id}/wishwall/led`);
+                      }}
+                      className={`w-full text-left rounded-2xl px-4 py-3 transition border ${
+                        ev.id === eventId
+                          ? 'bg-teal-500/20 border-teal-500/50 text-white'
+                          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-teal-500/50 text-white'
+                      }`}
+                    >
+                      <p className="font-semibold text-sm">{ev.name}</p>
+                      {ev.location && (
+                        <p className="text-white/40 text-xs mt-0.5">{ev.location}</p>
+                      )}
+                      {ev.id === eventId && (
+                        <p className="text-teal-400 text-xs mt-0.5 font-medium">● Đang hiển thị</p>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Empty state */}
       {items.length === 0 && (

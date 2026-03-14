@@ -1,55 +1,12 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../lib/axios';
 import Navbar from '../components/Navbar';
 import logoLinkieWhite from '../image/logo-linkie-white.png';
 import logoLinkie from '../image/Linkie.png';
 import bannerIntro from '../image/banner-intro.jpg';
 import bannerWishwall from '../image/banner-wishwall.jpg';
 import bannerCameraFrame from '../image/banner-CameraFrame.jpg';
-
-interface ApiEvent {
-  id: string;
-  name: string;
-  startTime: string;
-  status: 'Upcoming' | 'Ongoing' | 'Finished';
-}
-
-interface ApiResponse<T> {
-  statusCode: number;
-  message: string;
-  data: T;
-  responsedAt: string;
-}
-
-interface EventItem {
-  id: string;
-  name: string;
-  year: string;
-  image: string;
-  status: 'live' | 'upcoming';
-  month: number;
-  day: number;
-}
-
-const BANNER_IMAGES = [
-  'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=800&q=80',
-  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&w=800&q=80',
-  'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&w=800&q=80',
-];
-
-function mapApiEvent(e: ApiEvent, idx: number): EventItem {
-  const start = new Date(e.startTime);
-  return {
-    id: e.id,
-    name: e.name,
-    year: String(start.getFullYear()),
-    image: BANNER_IMAGES[idx % BANNER_IMAGES.length],
-    status: e.status === 'Ongoing' ? 'live' : 'upcoming',
-    month: start.getMonth() + 1,
-    day: start.getDate(),
-  };
-}
+import { useState, useEffect } from 'react';
+import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
 
 const LKLogoCard = () => (
   <div className="w-[104px] h-[104px] bg-white rounded-[32px] flex items-center justify-center flex-shrink-0 shadow-lg p-3 border-3 border-[#00d5ff]">
@@ -63,18 +20,24 @@ const LKLogoCard = () => (
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [events, setEvents] = useState<EventItem[]>([]);
-
-  const linkieWordClass =
-    'bg-gradient-to-r from-[#e253b1] via-[#7f74d1] to-[#4eb8ee] bg-clip-text text-transparent';
+  const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axiosInstance
-      .get<ApiResponse<ApiEvent[]>>('/api/events')
-      .then(res => {
-        setEvents((res.data.data ?? []).map(mapApiEvent));
-      })
-      .catch(() => { /* silently ignore — UI shows empty state */ });
+    const fetchEvents = async () => {
+      try {
+        // Gọi API với status="Active" để lấy chỉ các sự kiện Active
+        const data = await eventService.getAllEvents('Active');
+        // Lọc thêm: chỉ hiện sự kiện chưa kết thúc (live hoặc upcoming)
+        const visibleEvents = data.filter(e => getEventStatus(e) !== 'past');
+        setEvents(visibleEvents);
+      } catch (err) {
+        console.error('Failed to fetch public events', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
   }, []);
 
   return (
@@ -212,52 +175,62 @@ export default function HomePage() {
         <h2 className="text-center text-xl font-bold mb-5">Hôm nay có gì?</h2>
 
         <div className="flex flex-col gap-4">
-          {events.map((event) => (
-            <div key={event.id} className="block">
-              <div
-                className={`relative rounded-2xl overflow-hidden border transition-colors ${
-                  event.status === 'live'
-                    ? 'border-[#00bcd4]/40 hover:border-[#00bcd4]/80 cursor-pointer'
-                    : 'border-white/10 opacity-70 cursor-not-allowed'
-                }`}
-                onClick={() => event.status === 'live' && navigate(`/events/${event.id}`)}
-              >
-                {/* Status badge */}
-                <div className="absolute top-3 left-3 z-10">
-                  {event.status === 'live' ? (
-                    <span className="flex items-center gap-1.5 bg-[#0a0a1a]/80 text-white text-xs px-3 py-1.5 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                      Đang diễn ra
-                    </span>
-                  ) : (
-                    <span className="bg-white/90 text-[#0a0a1a] text-xs px-3 py-1.5 rounded-full font-medium">
-                      Sắp diễn ra
-                    </span>
-                  )}
-                </div>
-
-                <img
-                  src={event.image}
-                  alt={event.name}
-                  className="w-full h-44 object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-
-                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-                  <div>
-                    <p className="text-white font-bold text-sm leading-tight">{event.name}</p>
-                    <p className="text-gray-400 text-xs">{event.year}</p>
-                  </div>
-                  <div className="bg-[#0a0a1a]/80 border border-white/20 rounded-xl px-3 py-2 text-center min-w-[52px]">
-                    <p className="text-white/60 text-[9px] uppercase">Tháng {event.month}</p>
-                    <p className="text-white text-2xl font-black leading-none">
-                      {String(event.day).padStart(2, '0')}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-10 opacity-50">
+              <div className="animate-spin w-8 h-8 border-4 border-[#00e5ff] border-t-transparent rounded-full" />
             </div>
-          ))}
+          ) : events.length === 0 ? (
+            <div className="text-center py-10 text-gray-400 text-sm">Hiện không có sự kiện nào đang hoạt động.</div>
+          ) : (
+            events.map((event) => {
+              const status = getEventStatus(event);
+              const startDate = new Date(event.startTime);
+              const fallbackImage = 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=800&q=80';
+
+              return (
+                <div key={event.id} className="block">
+                  <div
+                    className="relative rounded-2xl overflow-hidden border border-[#00bcd4]/40 hover:border-[#00bcd4]/80 cursor-pointer shadow-lg shadow-[#00e5ff]/5"
+                    onClick={() => navigate(`/events/${event.id}`)}
+                  >
+                    {/* Status badge */}
+                    <div className="absolute top-3 left-3 z-10">
+                      {status === 'live' ? (
+                        <span className="flex items-center gap-1.5 bg-[#0a0a1a]/80 text-white text-xs px-3 py-1.5 rounded-full">
+                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                          Đang diễn ra
+                        </span>
+                      ) : (
+                        <span className="bg-white/90 text-[#0a0a1a] text-xs px-3 py-1.5 rounded-full font-medium">
+                          Sắp diễn ra
+                        </span>
+                      )}
+                    </div>
+
+                    <img
+                      src={event.thumbnailUrl || fallbackImage}
+                      alt={event.name}
+                      className="w-full h-44 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                    <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                      <div className="max-w-[70%]">
+                        <p className="text-white font-bold text-sm leading-tight uppercase truncate">{event.name}</p>
+                        <p className="text-gray-400 text-xs">{startDate.getFullYear()}</p>
+                      </div>
+                      <div className="bg-[#0a0a1a]/80 border border-white/20 rounded-xl px-3 py-2 text-center min-w-[52px]">
+                        <p className="text-white/60 text-[9px] uppercase">Tháng {startDate.getMonth() + 1}</p>
+                        <p className="text-white text-2xl font-black leading-none">
+                          {String(startDate.getDate()).padStart(2, '0')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 
