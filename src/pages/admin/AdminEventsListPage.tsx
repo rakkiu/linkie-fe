@@ -394,20 +394,6 @@ export default function AdminEventsListPage() {
                         <td style={cellStyle}>{event.isWishwallEnabled ? 'ON' : 'OFF'}</td>
                         <td style={{ ...cellStyle, textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                            {event.status === 'Ongoing' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/admin/wishwall-moderation/${event.id}`);
-                                }}
-                                style={{
-                                  padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(0,229,255,0.3)',
-                                  background: 'rgba(0,229,255,0.1)', color: '#00e5ff', fontSize: '11px', fontWeight: 800, cursor: 'pointer'
-                                }}
-                              >
-                                MODERATE
-                              </button>
-                            )}
                             {!isStaff && (
                               <button
                                 disabled={deletingId === event.id}

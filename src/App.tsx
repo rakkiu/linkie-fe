@@ -11,7 +11,6 @@ import AdminFanInsightsPage from './pages/admin/AdminFanInsightsPage';
 import AdminReportPage from './pages/admin/AdminReportPage';
 import AdminCreateEventPage from './pages/admin/AdminCreateEventPage';
 import AdminEventsListPage from './pages/admin/AdminEventsListPage';
-import WishwallModerationPage from './pages/WishwallModerationPage';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -75,16 +74,6 @@ function App() {
           <Route path="/admin/events" element={
             <StaffRoute>
               <AdminEventsListPage />
-            </StaffRoute>
-          } />
-          <Route path="/admin/wishwall-moderation" element={
-            <StaffRoute>
-              <WishwallModerationPage />
-            </StaffRoute>
-          } />
-          <Route path="/admin/wishwall-moderation/:id" element={
-            <StaffRoute>
-              <WishwallModerationPage />
             </StaffRoute>
           } />
         </Routes>

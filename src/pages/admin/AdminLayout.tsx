@@ -16,7 +16,7 @@ const LKLogo = () => (
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  activePage: 'dashboard' | 'events' | 'fan-insights' | 'report' | 'create-event' | 'wishwall-moderation';
+  activePage: 'dashboard' | 'events' | 'fan-insights' | 'report' | 'create-event';
 }
 
 export default function AdminLayout({ children, activePage }: AdminLayoutProps) {
@@ -34,7 +34,6 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
     { id: 'fan-insights', label: 'FAN INSIGHTS', path: '/admin/fan-insights', roles: ['admin'] },
     { id: 'report', label: 'REPORT', path: '/admin/report', roles: ['admin'] },
     { id: 'create-event', label: 'CREATE EVENT', path: '/admin/create-event', roles: ['admin'] },
-    { id: 'wishwall-moderation', label: 'WISHWALL', path: '/admin/wishwall-moderation', roles: ['admin', 'staff'] },
   ];
 
   const navItems = allNavItems.filter(item => 
