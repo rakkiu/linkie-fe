@@ -1,43 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axiosInstance from '../lib/axios';
-
-// Decode JWT payload to extract role claim
-function getRoleFromToken(token: string): string {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-      ?? payload['role']
-      ?? '';
-  } catch {
-    return '';
-  }
-}
-
-// Fetch events and return the first Ongoing event id, or null
-async function getOngoingEventId(): Promise<string | null> {
-  try {
-    const res = await axiosInstance.get<{ data: { id: string; status: string }[] }>('/api/events');
-    const found = (res.data.data ?? []).find(e => e.status === 'Ongoing');
-    return found?.id ?? null;
-  } catch {
-    return null;
-  }
-}
-
-// Determine redirect path based on role
-async function getRedirectPath(role: string): Promise<string> {
-  if (role === 'Staff' || role === 'Admin') {
-    const eventId = await getOngoingEventId();
-    return eventId ? `/events/${eventId}/wishwall/moderation` : '/';
-  }
-  if (role === 'LED') {
-    const eventId = await getOngoingEventId();
-    return eventId ? `/events/${eventId}/wishwall/led` : '/';
-  }
-  return '/';
-}
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24">
@@ -51,6 +14,8 @@ const GoogleIcon = () => (
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: Location })?.from?.pathname || null;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,13 +29,15 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      const token = localStorage.getItem('access_token') ?? '';
-      const role = getRoleFromToken(token);
-      navigate(await getRedirectPath(role));
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? 'Email hoặc mật khẩu không đúng.');
+      if (from) {
+        navigate(from, { replace: true });
+      } else if (email.toLowerCase().includes('admin')) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch {
+      setError('Email hoặc mật khẩu không đúng.');
     } finally {
       setLoading(false);
     }
@@ -80,9 +47,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      const token = localStorage.getItem('access_token') ?? '';
-      const role = getRoleFromToken(token);
-      navigate(await getRedirectPath(role));
+      navigate(from ?? '/');
     } finally {
       setLoading(false);
     }
@@ -158,15 +123,8 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* Forgot password link */}
-        <p className="text-gray-500 text-xs text-center mt-3">
-          <Link to="/forgot-password" className="text-[#00bcd4] hover:underline">
-            Quên mật khẩu?
-          </Link>
-        </p>
-
         {/* Register link */}
-        <p className="text-gray-500 text-xs text-center mt-3">
+        <p className="text-gray-500 text-xs text-center mt-5">
           Bạn chưa có tài khoản?{' '}
           <Link to="/register" className="text-[#00bcd4] hover:underline">
             Đăng ký ngay

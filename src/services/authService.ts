@@ -1,46 +1,39 @@
-import axiosInstance from '../lib/axios';
-import type { ApiResponse, LoginResponseDto, RegisterResponseDto } from '../types/auth';
+import axios from 'axios';
+import { BASE_URL, ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from './apiClient';
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+}
 
 export const authService = {
-  /** POST /api/Auth/login */
-  login: (email: string, password: string) =>
-    axiosInstance
-      .post<ApiResponse<LoginResponseDto>>('/api/Auth/login', { email, password })
-      .then((r) => r.data),
+  login: async (email: string, password: string): Promise<LoginResponse> => {
+    // We use a clean axios instance here to avoid the interceptor attaching a non-existent token for login
+    const response = await axios.post(`${BASE_URL}/Auth/login`, {
+      email,
+      password,
+    });
+    
+    // Response wrapper expected: { statusCode: 200, data: { accessToken: "..." } }
+    const data = response.data.data ?? response.data;
+    
+    // Save tokens
+    if (data.accessToken) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+    }
+    if (data.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+    }
+    
+    return data;
+  },
 
-  /** POST /api/Auth/logout */
-  logout: (refreshToken: string) =>
-    axiosInstance
-      .post<ApiResponse<null>>('/api/Auth/logout', { refreshToken })
-      .then((r) => r.data),
+  logout: () => {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  },
 
-  /** POST /api/Auth/register */
-  register: (name: string, email: string, password: string) =>
-    axiosInstance
-      .post<ApiResponse<RegisterResponseDto>>('/api/Auth/register', { name, email, password })
-      .then((r) => r.data),
-
-  /** POST /api/Auth/refresh */
-  refreshToken: (refreshToken: string, accessToken?: string) =>
-    axiosInstance
-      .post<ApiResponse<LoginResponseDto>>('/api/Auth/refresh', { refreshToken, accessToken })
-      .then((r) => r.data),
-
-  /** POST /api/Auth/forgetPassword */
-  forgotPassword: (email: string) =>
-    axiosInstance
-      .post<ApiResponse<null>>('/api/Auth/forgetPassword', { email })
-      .then((r) => r.data),
-
-  /** POST /api/Auth/resetPassword */
-  resetPassword: (token: string, newPassword: string) =>
-    axiosInstance
-      .post<ApiResponse<null>>('/api/Auth/resetPassword', { token, newPassword })
-      .then((r) => r.data),
-
-  /** POST /api/Auth/changePassword  (requires Bearer token) */
-  changePassword: (currentPassword: string, newPassword: string) =>
-    axiosInstance
-      .post<ApiResponse<null>>('/api/Auth/changePassword', { currentPassword, newPassword })
-      .then((r) => r.data),
+  forgotPassword: async (email: string): Promise<void> => {
+    await axios.post(`${BASE_URL}/Auth/forgot-password`, { email });
+  }
 };
