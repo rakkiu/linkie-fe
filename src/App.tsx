@@ -11,10 +11,19 @@ import AdminFanInsightsPage from './pages/admin/AdminFanInsightsPage';
 import AdminReportPage from './pages/admin/AdminReportPage';
 import AdminCreateEventPage from './pages/admin/AdminCreateEventPage';
 import AdminEventsListPage from './pages/admin/AdminEventsListPage';
+import WishwallModerationPage from './pages/WishwallModerationPage';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   if (!user || user.role !== 'admin') {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
+function StaffRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
@@ -42,7 +51,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* Admin Routes */}
+          {/* Admin & Staff Routes */}
           <Route path="/admin" element={
             <AdminRoute>
               <AdminDashboardPage />
@@ -64,9 +73,19 @@ function App() {
             </AdminRoute>
           } />
           <Route path="/admin/events" element={
-            <AdminRoute>
+            <StaffRoute>
               <AdminEventsListPage />
-            </AdminRoute>
+            </StaffRoute>
+          } />
+          <Route path="/admin/wishwall-moderation" element={
+            <StaffRoute>
+              <WishwallModerationPage />
+            </StaffRoute>
+          } />
+          <Route path="/admin/wishwall-moderation/:id" element={
+            <StaffRoute>
+              <WishwallModerationPage />
+            </StaffRoute>
           } />
         </Routes>
       </BrowserRouter>

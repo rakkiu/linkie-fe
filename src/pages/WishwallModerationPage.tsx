@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import axiosInstance from '../lib/axios';
+import AdminLayout from './admin/AdminLayout';
 import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
 import type { PendingWishwallMessage, WishwallStaffPending } from '../types/wishwall';
 
@@ -125,10 +125,9 @@ export default function WishwallModerationPage() {
   // ── Event picker screen ────────────────────────────────────────────────────
   if (!selectedEventId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white">
-        <Navbar />
-        <div className="max-w-2xl mx-auto px-4 pt-24 pb-8">
-          <h1 className="text-2xl font-bold tracking-tight mb-2">Wishwall Moderation</h1>
+      <AdminLayout activePage="wishwall-moderation">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <h1 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'white' }}>Wishwall Moderation</h1>
           <p className="text-slate-400 mb-6 text-sm">Chọn sự kiện đang diễn ra để duyệt tin nhắn.</p>
 
           {eventsLoading ? (
@@ -159,16 +158,14 @@ export default function WishwallModerationPage() {
             </ul>
           )}
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   // ── Moderation screen ──────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white">
-      <Navbar />
-
-      <div className="max-w-3xl mx-auto px-4 pt-20 pb-8">
+    <AdminLayout activePage="wishwall-moderation">
+      <div className="max-w-3xl mx-auto px-4 py-8 text-white">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Wishwall Moderation</h1>
@@ -247,6 +244,6 @@ export default function WishwallModerationPage() {
           </ul>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 }
