@@ -220,8 +220,10 @@ export default function AdminEventsListPage() {
   const getFilteredAndSortedEvents = () => {
     let result = [...events];
 
-    // Filter by Status
-    if (filterStatus !== 'All') {
+    // Staff restriction: Only show Ongoing events
+    if (isStaff) {
+      result = result.filter(e => e.status === 'Ongoing');
+    } else if (filterStatus !== 'All') {
       result = result.filter(e => e.status === filterStatus);
     }
 
@@ -388,13 +390,31 @@ export default function AdminEventsListPage() {
                         <td style={cellStyle}>{event.maxParticipants}</td>
                         <td style={cellStyle}>{event.isWishwallEnabled ? 'ON' : 'OFF'}</td>
                         <td style={{ ...cellStyle, textAlign: 'center' }}>
-                          <button
-                            disabled={deletingId === event.id}
-                            onClick={(e) => handleDelete(e, event.id, event.name)}
-                            style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid rgba(229,57,53,0.5)', background: 'rgba(229,57,53,0.1)', color: '#ef9a9a', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                          >
-                            Delete
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            {event.status === 'Ongoing' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/admin/wishwall-moderation/${event.id}`);
+                                }}
+                                style={{
+                                  padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(0,229,255,0.3)',
+                                  background: 'rgba(0,229,255,0.1)', color: '#00e5ff', fontSize: '11px', fontWeight: 800, cursor: 'pointer'
+                                }}
+                              >
+                                MODERATE
+                              </button>
+                            )}
+                            {!isStaff && (
+                              <button
+                                disabled={deletingId === event.id}
+                                onClick={(e) => handleDelete(e, event.id, event.name)}
+                                style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid rgba(229,57,53,0.5)', background: 'rgba(229,57,53,0.1)', color: '#ef9a9a', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
