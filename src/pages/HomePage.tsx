@@ -1,7 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import logoLinkieWhite from '../image/logo-linkie-white.png';
-import logoLinkie from '../image/Linkie.png';
 import bannerIntro from '../image/banner-intro.jpg';
 import bannerWishwall from '../image/banner-wishwall.jpg';
 import bannerCameraFrame from '../image/banner-CameraFrame.jpg';

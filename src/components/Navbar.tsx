@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logoLinkieBlack from '../image/logo-linkie-black.png';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
