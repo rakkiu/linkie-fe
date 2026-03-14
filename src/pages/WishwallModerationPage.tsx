@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import axiosInstance from '../lib/axios';
 import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
 import type { PendingWishwallMessage, WishwallStaffPending } from '../types/wishwall';
@@ -125,50 +124,47 @@ export default function WishwallModerationPage() {
   // ── Event picker screen ────────────────────────────────────────────────────
   if (!selectedEventId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white">
-        <Navbar />
-        <div className="max-w-2xl mx-auto px-4 pt-24 pb-8">
-          <h1 className="text-2xl font-bold tracking-tight mb-2">Wishwall Moderation</h1>
-          <p className="text-slate-400 mb-6 text-sm">Chọn sự kiện đang diễn ra để duyệt tin nhắn.</p>
+    <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'white' }}>Wishwall Moderation</h1>
+        <p className="text-slate-400 mb-6 text-sm">Chọn sự kiện đang diễn ra để duyệt tin nhắn.</p>
 
-          {eventsLoading ? (
-            <p className="text-slate-400 text-center mt-16">Đang tải sự kiện…</p>
-          ) : ongoingEvents.length === 0 ? (
-            <div className="text-center mt-16 text-slate-400">
-              <p className="text-4xl mb-3">📭</p>
-              <p>Không có sự kiện nào đang diễn ra.</p>
-            </div>
-          ) : (
-            <ul className="space-y-3">
-              {ongoingEvents.map(ev => (
-                <li key={ev.id}>
-                  <button
-                    onClick={() => handleSelectEvent(ev)}
-                    className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500 rounded-2xl px-5 py-4 transition"
-                  >
-                    <p className="font-semibold text-white">{ev.name}</p>
-                    <div className="flex items-center gap-3 mt-1">
-                      {ev.location && (
-                        <span className="text-slate-400 text-xs">{ev.location}</span>
-                      )}
-                      <span className="text-xs text-green-400 font-medium">● Đang diễn ra</span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        {eventsLoading ? (
+          <p className="text-slate-400 text-center mt-16">Đang tải sự kiện…</p>
+        ) : ongoingEvents.length === 0 ? (
+          <div className="text-center mt-16 text-slate-400">
+            <p className="text-4xl mb-3">📭</p>
+            <p>Không có sự kiện nào đang diễn ra.</p>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {ongoingEvents.map(ev => (
+              <li key={ev.id}>
+                <button
+                  onClick={() => handleSelectEvent(ev)}
+                  className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500 rounded-2xl px-5 py-4 transition"
+                >
+                  <p className="font-semibold text-white">{ev.name}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    {ev.location && (
+                      <span className="text-slate-400 text-xs">{ev.location}</span>
+                    )}
+                    <span className="text-xs text-green-400 font-medium">● Đang diễn ra</span>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
+    </div>
     );
   }
 
   // ── Moderation screen ──────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white">
-      <Navbar />
-
-      <div className="max-w-3xl mx-auto px-4 pt-20 pb-8">
+    <div className="min-h-screen bg-[#0f1221] text-white">
+      <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Wishwall Moderation</h1>
@@ -176,7 +172,7 @@ export default function WishwallModerationPage() {
               <p className="text-purple-300 text-sm mt-1">{selectedEventName}</p>
             )}
           </div>
-          {/* Allow staff to switch event if they came via /staff/wishwall */}
+          {/* Allow staff to switch event */}
           {!paramEventId && (
             <button
               onClick={() => {

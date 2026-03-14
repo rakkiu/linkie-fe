@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import AdminLayout from './AdminLayout';
 import { adminEventService, type ApiEvent, type EventFormData, type ArFrame, mapStatusToString } from '../../services/adminEventService';
 
@@ -14,6 +15,9 @@ function formatDateTime(iso: string) {
 
 export default function AdminEventsListPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isStaff = user?.role === 'staff';
+
   const [events, setEvents] = useState<ApiEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -215,8 +219,10 @@ export default function AdminEventsListPage() {
   const getFilteredAndSortedEvents = () => {
     let result = [...events];
 
-    // Filter by Status
-    if (filterStatus !== 'All') {
+    // Staff restriction: Only show Ongoing events
+    if (isStaff) {
+      result = result.filter(e => e.status === 'Ongoing');
+    } else if (filterStatus !== 'All') {
       result = result.filter(e => e.status === filterStatus);
     }
 
@@ -268,19 +274,21 @@ export default function AdminEventsListPage() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
-        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 800, letterSpacing: '1px' }}>EVENT MANAGEMENT</h1>
+        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 800, letterSpacing: '1px' }}>{isStaff ? 'ONGOING EVENTS' : 'EVENT MANAGEMENT'}</h1>
         <div style={{ display: 'flex', gap: '12px' }}>
           {/* Filter Status */}
-          <select 
-            value={filterStatus} 
-            onChange={e => setFilterStatus(e.target.value)}
-            style={{ ...inputStyle, width: 'auto', padding: '8px 16px', background: 'rgba(255,255,255,0.06)' }}
-          >
-            <option value="All">All Status</option>
-            <option value="Upcoming">Upcoming</option>
-            <option value="Ongoing">Ongoing</option>
-            <option value="Finished">Finished</option>
-          </select>
+          {!isStaff && (
+            <select 
+              value={filterStatus} 
+              onChange={e => setFilterStatus(e.target.value)}
+              style={{ ...inputStyle, width: 'auto', padding: '8px 16px', background: 'rgba(255,255,255,0.06)' }}
+            >
+              <option value="All">All Status</option>
+              <option value="Upcoming">Upcoming</option>
+              <option value="Ongoing">Ongoing</option>
+              <option value="Finished">Finished</option>
+            </select>
+          )}
 
           {/* Sort By */}
           <select 
@@ -294,15 +302,17 @@ export default function AdminEventsListPage() {
             <option value="pax-asc">Pax: Lowest</option>
           </select>
 
-          <button
-            onClick={() => navigate('/admin/create-event')}
-            style={{
-              padding: '10px 24px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg,#e91e8c,#9c27b0)',
-              color: 'white', fontWeight: 700, fontSize: '13px', letterSpacing: '1px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(233,30,140,0.3)',
-            }}
-          >
-            + CREATE EVENT
-          </button>
+          {!isStaff && (
+            <button
+              onClick={() => navigate('/admin/create-event')}
+              style={{
+                padding: '10px 24px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg,#e91e8c,#9c27b0)',
+                color: 'white', fontWeight: 700, fontSize: '13px', letterSpacing: '1px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(233,30,140,0.3)',
+              }}
+            >
+              + CREATE EVENT
+            </button>
+          )}
         </div>
       </div>
 
@@ -383,13 +393,17 @@ export default function AdminEventsListPage() {
                         <td style={cellStyle}>{event.maxParticipants}</td>
                         <td style={cellStyle}>{event.isWishwallEnabled ? 'ON' : 'OFF'}</td>
                         <td style={{ ...cellStyle, textAlign: 'center' }}>
-                          <button
-                            disabled={deletingId === event.id}
-                            onClick={(e) => handleDelete(e, event.id, event.name)}
-                            style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid rgba(229,57,53,0.5)', background: 'rgba(229,57,53,0.1)', color: '#ef9a9a', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                          >
-                            Delete
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            {!isStaff && (
+                              <button
+                                disabled={deletingId === event.id}
+                                onClick={(e) => handleDelete(e, event.id, event.name)}
+                                style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid rgba(229,57,53,0.5)', background: 'rgba(229,57,53,0.1)', color: '#ef9a9a', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -410,7 +424,7 @@ export default function AdminEventsListPage() {
           backdropFilter: 'blur(8px)', padding: '20px',
         }}>
           <div style={{
-            background: '#0a0a0f', borderRadius: '24px', width: '100%', maxWidth: '900px',
+            background: '#0a0a0f', borderRadius: '24px', width: '100%', maxWidth: '1200px',
             maxHeight: '92vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)',
             boxShadow: '0 25px 60px rgba(0,0,0,0.8)', color: 'white'
           }}>
@@ -424,10 +438,10 @@ export default function AdminEventsListPage() {
             </div>
             
             <div style={{ padding: '0 40px 40px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '40px', marginTop: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: '32px', marginTop: '32px' }}>
                 {/* Left Side: Form */}
                 <form id="edit-event-form" onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '32px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '32px' }}>
                     {/* Form Fields Side */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -493,7 +507,7 @@ export default function AdminEventsListPage() {
                 </form>
 
                 {/* Right Side: AR Frames Section */}
-                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '40px' }}>
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '32px' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '1px', color: '#00e5ff', marginBottom: '24px' }}> AR FRAMES MANAGEMENT </h3>
 
                   <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
