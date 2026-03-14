@@ -410,7 +410,7 @@ export default function AdminEventsListPage() {
           backdropFilter: 'blur(8px)', padding: '20px',
         }}>
           <div style={{
-            background: '#0a0a0f', borderRadius: '24px', width: '100%', maxWidth: '900px',
+            background: '#0a0a0f', borderRadius: '24px', width: '100%', maxWidth: '1200px',
             maxHeight: '92vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)',
             boxShadow: '0 25px 60px rgba(0,0,0,0.8)', color: 'white'
           }}>
@@ -424,10 +424,10 @@ export default function AdminEventsListPage() {
             </div>
             
             <div style={{ padding: '0 40px 40px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '40px', marginTop: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: '32px', marginTop: '32px' }}>
                 {/* Left Side: Form */}
                 <form id="edit-event-form" onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '32px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '32px' }}>
                     {/* Form Fields Side */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -493,7 +493,7 @@ export default function AdminEventsListPage() {
                 </form>
 
                 {/* Right Side: AR Frames Section */}
-                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '40px' }}>
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '32px' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '1px', color: '#00e5ff', marginBottom: '24px' }}> AR FRAMES MANAGEMENT </h3>
 
                   <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
