@@ -16,7 +16,6 @@ function formatDateTime(iso: string) {
 export default function AdminEventsListPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
   const isStaff = user?.role === 'staff';
 
   const [events, setEvents] = useState<ApiEvent[]>([]);
