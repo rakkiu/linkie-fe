@@ -274,19 +274,21 @@ export default function AdminEventsListPage() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
-        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 800, letterSpacing: '1px' }}>EVENT MANAGEMENT</h1>
+        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 800, letterSpacing: '1px' }}>{isStaff ? 'ONGOING EVENTS' : 'EVENT MANAGEMENT'}</h1>
         <div style={{ display: 'flex', gap: '12px' }}>
           {/* Filter Status */}
-          <select 
-            value={filterStatus} 
-            onChange={e => setFilterStatus(e.target.value)}
-            style={{ ...inputStyle, width: 'auto', padding: '8px 16px', background: 'rgba(255,255,255,0.06)' }}
-          >
-            <option value="All">All Status</option>
-            <option value="Upcoming">Upcoming</option>
-            <option value="Ongoing">Ongoing</option>
-            <option value="Finished">Finished</option>
-          </select>
+          {!isStaff && (
+            <select 
+              value={filterStatus} 
+              onChange={e => setFilterStatus(e.target.value)}
+              style={{ ...inputStyle, width: 'auto', padding: '8px 16px', background: 'rgba(255,255,255,0.06)' }}
+            >
+              <option value="All">All Status</option>
+              <option value="Upcoming">Upcoming</option>
+              <option value="Ongoing">Ongoing</option>
+              <option value="Finished">Finished</option>
+            </select>
+          )}
 
           {/* Sort By */}
           <select 
@@ -300,15 +302,17 @@ export default function AdminEventsListPage() {
             <option value="pax-asc">Pax: Lowest</option>
           </select>
 
-          <button
-            onClick={() => navigate('/admin/create-event')}
-            style={{
-              padding: '10px 24px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg,#e91e8c,#9c27b0)',
-              color: 'white', fontWeight: 700, fontSize: '13px', letterSpacing: '1px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(233,30,140,0.3)',
-            }}
-          >
-            + CREATE EVENT
-          </button>
+          {!isStaff && (
+            <button
+              onClick={() => navigate('/admin/create-event')}
+              style={{
+                padding: '10px 24px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg,#e91e8c,#9c27b0)',
+                color: 'white', fontWeight: 700, fontSize: '13px', letterSpacing: '1px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(233,30,140,0.3)',
+              }}
+            >
+              + CREATE EVENT
+            </button>
+          )}
         </div>
       </div>
 
