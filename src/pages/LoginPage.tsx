@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logoStar from '../image/logo-linkie-black.png';
+import logoText from '../image/Linkie.png';
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24">
@@ -14,8 +16,8 @@ const GoogleIcon = () => (
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as { from?: Location })?.from?.pathname || null;
+  // Removed useLocation as per instruction, 'from' will default to null
+  const from = null; 
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -65,11 +67,15 @@ export default function LoginPage() {
 
       {/* Dark card slides up over gradient */}
       <div className="flex-1 bg-[#0f1221] rounded-t-[2rem] -mt-8 px-6 pt-8 pb-6 flex flex-col">
-        <div className="flex items-center gap-3 mb-4">
-          <img src="/image.png" alt="Linkle" className="h-10 w-auto" />
-          <h1 className="text-3xl font-black text-white tracking-wider">LINKLE</h1>
+        <div className="flex flex-col items-center mb-8">
+          <img 
+            src={logoStar} 
+            alt="Linkie Icon" 
+            className="h-16 w-auto mb-4 object-contain" 
+          />
+          <img src={logoText} alt="Linkie" className="h-10 w-auto" />
+          <p className="text-gray-400 text-sm mt-2">Hệ thống quản trị sự kiện</p>
         </div>
-        <p className="text-slate-400 text-sm mb-7">Đăng nhập bảng điều khiển sự kiện</p>
 
         {/* Google button */}
         <button
@@ -136,8 +142,9 @@ export default function LoginPage() {
         </p>
 
         {/* Disclaimer */}
-        <p className="text-gray-600 text-[10px] text-center mt-auto pt-8 leading-relaxed">
-          Đăng nhập trải nghiệm trọn vẹn ứng dụng và đồng ý với Điều khoản Linkle nhằm hỗ trợ BTC cải thiện trải nghiệm sự kiện
+        <p className="text-center text-gray-500 text-[11px] mt-8 leading-relaxed">
+          Bằng việc đăng nhập, bạn đồng ý với Điều khoản dịch vụ<br />
+          và Chính sách bảo mật của Linkie.
         </p>
       </div>
     </div>

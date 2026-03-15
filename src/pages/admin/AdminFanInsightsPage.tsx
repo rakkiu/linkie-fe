@@ -183,7 +183,7 @@ export default function AdminFanInsightsPage() {
             <span style={{ color: 'white', fontWeight: 700, fontSize: '13px' }}>Tổng số lượng : {fans.length.toLocaleString()}.700</span>
             <div style={{ textAlign: 'right' }}>
               <div style={{ color: '#00bcd4', fontSize: '11px', fontWeight: 700 }}>Data updated realtime</div>
-              <div style={{ color: '#666', fontSize: '10px', fontStyle: 'italic' }}>Dữ liệu được cập nhật realtime từ Website Linkle</div>
+              <div style={{ color: '#666', fontSize: '10px', fontStyle: 'italic' }}>Dữ liệu được cập nhật realtime từ Website Linkie</div>
             </div>
           </div>
         </div>
