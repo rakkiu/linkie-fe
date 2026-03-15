@@ -30,8 +30,9 @@ export const wishwallApi = {
  * The caller is responsible for starting, joining groups, and stopping.
  */
 export function createWishwallConnection(): signalR.HubConnection {
+  const hubUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5002') + '/hubs/wishwall';
   return new signalR.HubConnectionBuilder()
-    .withUrl('/hubs/wishwall', {
+    .withUrl(hubUrl, {
       // Pass JWT via query string — required for WebSocket transport
       accessTokenFactory: () => localStorage.getItem('access_token') ?? '',
     })

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import { adminEventService, type EventFormData } from '../../services/adminEventService';
+import ImageCropperModal from '../../components/admin/ImageCropperModal';
 
 export default function AdminCreateEventPage() {
   const navigate = useNavigate();
@@ -27,6 +28,10 @@ export default function AdminCreateEventPage() {
   const [newFramePreview, setNewFramePreview] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Image Cropper States
+  const [cropperImage, setCropperImage] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -70,13 +75,17 @@ export default function AdminCreateEventPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    setThumbnailFile(file);
     if (file) {
-      const url = URL.createObjectURL(file);
-      setThumbnailPreview(url);
-    } else {
-      setThumbnailPreview(null);
+      setCropperImage(URL.createObjectURL(file));
+      setShowCropper(true);
     }
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    setThumbnailFile(croppedFile);
+    setThumbnailPreview(URL.createObjectURL(croppedFile));
+    setShowCropper(false);
+    setCropperImage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -391,6 +400,16 @@ export default function AdminCreateEventPage() {
           </div>
           <div style={{ position: 'absolute', top: '30px', right: '40px', color: 'white', fontSize: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>✕</div>
         </div>
+      )}
+      {showCropper && cropperImage && (
+        <ImageCropperModal
+          image={cropperImage}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setShowCropper(false);
+            setCropperImage(null);
+          }}
+        />
       )}
     </AdminLayout>
   );

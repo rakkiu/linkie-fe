@@ -1,43 +1,37 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import axiosInstance from '../lib/axios';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
+import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
 import type { PendingWishwallMessage, WishwallStaffPending } from '../types/wishwall';
-
-const SENTIMENT_COLOR: Record<string, string> = {
-  Positive: 'text-green-400',
-  Neutral: 'text-slate-300',
-  Negative: 'text-red-400',
-};
-
-interface OngoingEvent {
-  id: string;
-  name: string;
-  location?: string;
-  startTime: string;
-}
+import { formatToLocalTime } from '../lib/dateUtils';
 
 export default function WishwallModerationPage() {
   const { id: paramEventId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   // If navigated via /staff/wishwall, paramEventId is undefined → show picker
   const [selectedEventId, setSelectedEventId] = useState<string | null>(paramEventId ?? null);
   const [selectedEventName, setSelectedEventName] = useState<string>('');
 
   // ── Event picker state ─────────────────────────────────────────────────────
-  const [ongoingEvents, setOngoingEvents] = useState<OngoingEvent[]>([]);
+  const [ongoingEvents, setOngoingEvents] = useState<PublicEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(!paramEventId);
 
   useEffect(() => {
-    if (selectedEventId) return; // already have an event
-    axiosInstance
-      .get<{ data: OngoingEvent[] }>('/api/events?status=Ongoing')
-      .then(res => setOngoingEvents((res.data as { data: OngoingEvent[] }).data ?? []))
+    if (selectedEventId) return; 
+    
+    eventService.getAllEvents('Active')
+      .then(data => {
+        const liveEvents = data.filter(ev => getEventStatus(ev) === 'live');
+        setOngoingEvents(liveEvents);
+      })
       .catch(() => {})
       .finally(() => setEventsLoading(false));
   }, [selectedEventId]);
 
-  const handleSelectEvent = (ev: OngoingEvent) => {
+  const handleSelectEvent = (ev: PublicEvent) => {
     setSelectedEventName(ev.name);
     setSelectedEventId(ev.id);
   };
@@ -55,7 +49,9 @@ export default function WishwallModerationPage() {
     try {
       const res = await wishwallApi.getPendingMessages(selectedEventId);
       const data: PendingWishwallMessage[] = (res.data as { data: PendingWishwallMessage[] }).data ?? [];
-      setMessages(data);
+      // Sort oldest first
+      const sortedData = [...data].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      setMessages(sortedData);
     } catch {
       // silently ignore
     } finally {
@@ -82,6 +78,7 @@ export default function WishwallModerationPage() {
       setMessages(prev => {
         if (prev.some(m => m.id === payload.id)) return prev;
         return [
+          ...prev,
           {
             id: payload.id,
             userId: '',
@@ -89,8 +86,7 @@ export default function WishwallModerationPage() {
             message: payload.message,
             sentiment: payload.sentiment,
             createdAt: payload.createdAt,
-          },
-          ...prev,
+          }
         ];
       });
     });
@@ -124,55 +120,84 @@ export default function WishwallModerationPage() {
   // ── Event picker screen ────────────────────────────────────────────────────
   if (!selectedEventId) {
     return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'white' }}>Wishwall Moderation</h1>
-        <p className="text-slate-400 mb-6 text-sm">Chọn sự kiện đang diễn ra để duyệt tin nhắn.</p>
-
-        {eventsLoading ? (
-          <p className="text-slate-400 text-center mt-16">Đang tải sự kiện…</p>
-        ) : ongoingEvents.length === 0 ? (
-          <div className="text-center mt-16 text-slate-400">
-            <p className="text-4xl mb-3">📭</p>
-            <p>Không có sự kiện nào đang diễn ra.</p>
+      <div className="min-h-screen bg-black overflow-hidden flex flex-col" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+        {/* Header bar */}
+        <div className="h-16 flex items-center justify-between px-8 border-b border-white/10 bg-black/70 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <span className="text-white/80 text-xl font-semibold tracking-wide">Wish Wall Staff</span>
           </div>
-        ) : (
-          <ul className="space-y-3">
-            {ongoingEvents.map(ev => (
-              <li key={ev.id}>
+          <button
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            className="text-xs text-white/50 hover:text-white transition-colors border border-white/10 hover:border-white/30 px-3 py-1 rounded-full"
+          >
+            LOGOUT
+          </button>
+        </div>
+
+        <div className="flex-1 flex flex-col items-center pt-12 p-6 max-w-2xl mx-auto w-full">
+          <h1 className="text-3xl font-bold text-white mb-2 text-center">Wishwall Moderation</h1>
+          <p className="text-white/40 mb-10 text-center">Chọn sự kiện đang diễn ra để bắt đầu duyệt tin nhắn.</p>
+
+          {eventsLoading ? (
+            <p className="text-white/30 text-sm text-center py-8 animate-pulse">Đang tải sự kiện…</p>
+          ) : ongoingEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 bg-white/5 border border-white/10 rounded-3xl w-full">
+              <p className="text-6xl mb-4">📭</p>
+              <p className="text-white/30 italic">Không có sự kiện nào đang diễn ra.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 w-full">
+              {ongoingEvents.map(ev => (
                 <button
+                  key={ev.id}
                   onClick={() => handleSelectEvent(ev)}
-                  className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500 rounded-2xl px-5 py-4 transition"
+                  className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-teal-500 rounded-3xl p-6 transition-all group"
                 >
-                  <p className="font-semibold text-white">{ev.name}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    {ev.location && (
-                      <span className="text-slate-400 text-xs">{ev.location}</span>
-                    )}
-                    <span className="text-xs text-green-400 font-medium">● Đang diễn ra</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white font-bold text-lg group-hover:text-teal-400 transition-colors uppercase tracking-wider">{ev.name}</h3>
+                      <div className="flex items-center gap-3 mt-2">
+                        {ev.location && (
+                          <div className="flex items-center gap-1.5 text-white/40 text-sm">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span>{ev.location}</span>
+                          </div>
+                        )}
+                        <span className="flex items-center gap-1.5 text-teal-400 text-xs font-bold uppercase tracking-widest">
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                          LIVE
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-teal-500/20 group-hover:text-teal-400 transition-all">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
                   </div>
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     );
   }
 
   // ── Moderation screen ──────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0f1221] text-white">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Wishwall Moderation</h1>
-            {selectedEventName && (
-              <p className="text-purple-300 text-sm mt-1">{selectedEventName}</p>
-            )}
-          </div>
-          {/* Allow staff to switch event */}
+    <div className="min-h-screen bg-black text-white flex flex-col" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      {/* Header bar */}
+      <div className="h-16 flex items-center justify-between px-8 border-b border-white/10 bg-black/70 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex flex-col">
+          <span className="text-white/80 text-xl font-semibold tracking-wide">Wishwall Staff</span>
+          {selectedEventName && (
+            <span className="text-teal-400 text-[10px] font-bold uppercase tracking-widest">{selectedEventName}</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
           {!paramEventId && (
             <button
               onClick={() => {
@@ -181,51 +206,70 @@ export default function WishwallModerationPage() {
                 setMessages([]);
                 setEventsLoading(true);
               }}
-              className="text-xs text-slate-400 hover:text-white underline transition"
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors px-3 py-1 rounded-full border border-white/10 hover:border-white/30"
             >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
               Đổi sự kiện
             </button>
           )}
+          <button
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            className="text-[10px] font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors border border-white/10 hover:border-white/30 px-3 py-1 rounded-full"
+          >
+            LOGOUT
+          </button>
         </div>
+      </div>
 
+      <div className="max-w-3xl mx-auto px-4 py-8 w-full">
         {loading ? (
-          <p className="text-slate-400 text-center mt-20">Đang tải tin nhắn…</p>
+          <p className="text-white/30 text-sm text-center mt-20 animate-pulse uppercase tracking-widest">Đang tải tin nhắn…</p>
         ) : messages.length === 0 ? (
-          <div className="text-center mt-20 text-slate-400">
-            <p className="text-4xl mb-3"></p>
-            <p>Không có tin nhắn chờ duyệt.</p>
+          <div className="text-center mt-20 text-white/20">
+            <p className="text-5xl mb-4"></p>
+            <p className="text-lg font-medium">Không có tin nhắn chờ duyệt.</p>
           </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {messages.map(msg => (
               <li
                 key={msg.id}
-                className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2"
+                className="bg-white/5 border border-white/10 rounded-3xl p-6 transition-all shadow-xl backdrop-blur-sm"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-purple-300 truncate">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm font-bold text-teal-400/90 uppercase tracking-wider">
                         {msg.userName || 'Anonymous'}
                       </span>
                       <span
-                        className={`text-xs font-medium ${SENTIMENT_COLOR[msg.sentiment] ?? 'text-slate-400'}`}
+                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                          msg.sentiment === 'Positive' ? 'border-green-500/30 text-green-400 bg-green-500/10' :
+                          msg.sentiment === 'Negative' ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' :
+                          'border-white/20 text-white/50 bg-white/5'
+                        }`}
                       >
                         {msg.sentiment}
                       </span>
                     </div>
-                    <p className="text-white/90 text-sm break-words">{msg.message}</p>
-                    <p className="text-slate-500 text-xs mt-1">
-                      {new Date(msg.createdAt).toLocaleTimeString()}
-                    </p>
+                    <p className="text-white text-lg font-light leading-relaxed">{msg.message}</p>
                   </div>
+                  <span className="text-white/20 text-xs font-medium shrink-0">
+                    {formatToLocalTime(msg.createdAt)}
+                  </span>
                 </div>
 
-                <div className="flex gap-2 mt-1">
+                <div className="flex gap-3 pt-4 border-t border-white/5">
                   <button
                     disabled={!!actionId}
                     onClick={() => handleDisplay(msg)}
-                    className="flex-1 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-500 text-sm font-semibold transition disabled:opacity-40"
+                    className="flex-1 py-3 rounded-2xl bg-teal-500 text-black text-xs font-bold uppercase tracking-widest hover:bg-teal-400 transition-all disabled:opacity-40"
                   >
                     {actionId === `display-${msg.id}` ? 'Đang đẩy…' : '🖥 Push to LED'}
                   </button>
@@ -233,7 +277,7 @@ export default function WishwallModerationPage() {
                   <button
                     disabled={!!actionId}
                     onClick={() => handleReject(msg.id)}
-                    className="px-4 py-2 rounded-xl bg-red-700/60 hover:bg-red-600 text-sm font-semibold transition disabled:opacity-40"
+                    className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:text-rose-400 hover:border-rose-500/50 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40"
                   >
                     ✕
                   </button>

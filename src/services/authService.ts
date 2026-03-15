@@ -35,5 +35,14 @@ export const authService = {
 
   forgotPassword: async (email: string): Promise<void> => {
     await axios.post(`${BASE_URL}/Auth/forgot-password`, { email });
+
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<void> => {
+    await axios.post(`${BASE_URL}/Auth/reset-password`, { token, newPassword });
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    await axios.post(`${BASE_URL}/Auth/change-password`, { currentPassword, newPassword });
   }
 };

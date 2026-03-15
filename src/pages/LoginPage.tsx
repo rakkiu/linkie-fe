@@ -31,10 +31,16 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
+      const lowerEmail = email.toLowerCase();
+      
       if (from) {
         navigate(from, { replace: true });
-      } else if (email.toLowerCase().includes('admin')) {
+      } else if (lowerEmail.includes('admin')) {
         navigate('/admin');
+      } else if (lowerEmail.includes('staff')) {
+        navigate('/staff/wishwall');
+      } else if (lowerEmail.includes('led')) {
+        navigate('/led');
       } else {
         navigate('/');
       }

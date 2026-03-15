@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
 
@@ -22,10 +23,20 @@ const LKLogoCard = () => (
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (user?.role === 'staff') {
+      navigate('/staff/wishwall', { replace: true });
+      return;
+    }
+    if (user?.role === 'led') {
+      navigate('/led', { replace: true });
+      return;
+    }
+
     const fetchEvents = async () => {
       try {
         const data = await eventService.getAllEvents('Active');
@@ -38,7 +49,7 @@ export default function HomePage() {
       }
     };
     fetchEvents();
-  }, []);
+  }, [user, navigate]);
 
   return (
     <div className="bg-[#0a0a1a] min-h-screen text-white pb-20">

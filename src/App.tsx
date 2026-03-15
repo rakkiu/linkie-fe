@@ -11,6 +11,9 @@ import AdminFanInsightsPage from './pages/admin/AdminFanInsightsPage';
 import AdminReportPage from './pages/admin/AdminReportPage';
 import AdminCreateEventPage from './pages/admin/AdminCreateEventPage';
 import AdminEventsListPage from './pages/admin/AdminEventsListPage';
+import WishwallModerationPage from './pages/WishwallModerationPage';
+import LedScreenPage from './pages/LedScreenPage';
+import EventsPage from './pages/EventsPage';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -28,6 +31,14 @@ function StaffRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function LedRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user || (user.role !== 'admin' && user.role !== 'led')) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
@@ -40,6 +51,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/events" element={<EventsPage />} />
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/events/:id/camera-frame" element={
             <PrivateRoute><CameraFramePage /></PrivateRoute>
@@ -47,6 +59,21 @@ function App() {
           <Route path="/events/:id/wishwall" element={
             <PrivateRoute><WishwallPage /></PrivateRoute>
           } />
+          <Route path="/events/:id/wishwall/moderation" element={
+            <StaffRoute><WishwallModerationPage /></StaffRoute>
+          } />
+          <Route path="/events/:id/wishwall/led" element={
+            <LedRoute><LedScreenPage /></LedRoute>
+          } />
+          
+          {/* Pickers */}
+          <Route path="/staff/wishwall" element={
+            <StaffRoute><WishwallModerationPage /></StaffRoute>
+          } />
+          <Route path="/led" element={
+            <LedRoute><LedScreenPage /></LedRoute>
+          } />
+
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           

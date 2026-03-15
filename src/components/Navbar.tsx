@@ -20,6 +20,19 @@ export default function Navbar() {
         <Link to="/" className="hover:text-white transition-colors">
           Trang chủ
         </Link>
+        <Link to="/events" className="hover:text-white transition-colors">
+          Sự kiện
+        </Link>
+        {(user?.role === 'admin' || user?.role === 'staff') && (
+          <Link to="/staff/wishwall" className="text-purple-400 hover:text-purple-300 transition-colors">
+            Duyệt Wishwall
+          </Link>
+        )}
+        {(user?.role === 'admin' || user?.role === 'led') && (
+          <Link to="/led" className="text-teal-400 hover:text-teal-300 transition-colors">
+            Màn hình LED
+          </Link>
+        )}
         <a href="/#about" className="hover:text-white transition-colors">
           Về chúng tôi
         </a>

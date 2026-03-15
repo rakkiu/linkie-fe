@@ -24,6 +24,14 @@ export interface ArFrame {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/** Ensures a URL is absolute for images/assets. */
+export const ensureImageUrl = (url: string | null): string => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:')) return url;
+  const baseUrl = 'http://localhost:5002';
+  return url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
+};
+
 /** Tính trạng thái sự kiện dựa trên thời gian hiện tại */
 export const getEventStatus = (event: PublicEvent): 'live' | 'upcoming' | 'past' => {
   const now = Date.now();
@@ -42,14 +50,22 @@ export const eventService = {
   getAllEvents: async (status?: string): Promise<PublicEvent[]> => {
     const params = status ? { status } : {};
     const response = await apiClient.get('/events', { params });
-    return response.data.data ?? response.data;
+    const data = response.data.data ?? response.data;
+    return data.map((event: any) => ({
+      ...event,
+      thumbnailUrl: ensureImageUrl(event.thumbnailUrl)
+    }));
   },
 
   /** GET — Lấy chi tiết một sự kiện theo ID (có fallback nếu 404) */
   getEventById: async (id: string): Promise<PublicEvent> => {
     try {
       const response = await apiClient.get(`/events/${id}`);
-      return response.data.data ?? response.data;
+      const event = response.data.data ?? response.data;
+      return {
+        ...event,
+        thumbnailUrl: ensureImageUrl(event.thumbnailUrl)
+      };
     } catch (error: any) {
       if (error.response?.status === 404) {
         console.warn(`Event ${id} not found by direct ID, trying fallback from all events...`);
