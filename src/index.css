@@ -19,3 +19,30 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+/* Đổi màu icon lịch mặc định thành màu trắng sữa, to và đậm hơn */
+.date-icon-white::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.5) contrast(1.5); /* Tăng độ sáng và tương phản để rõ nét hơn */
+  transform: scale(1.6); /* Phóng to 1.6 lần */
+  margin-right: 4px; /* Tránh sát lề phải quá */
+  cursor: pointer;
+  opacity: 0.9;
+}
+.date-icon-white::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Dark theme cho dropdown select trong trang Admin */
+select option {
+  background-color: #1a1a2e;
+  color: #e0e0e0;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+select option:hover,
+select option:checked,
+select option:focus {
+  background-color: #2d1f3d;
+  color: #ffffff;
+}
