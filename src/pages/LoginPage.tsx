@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import logoStar from '../image/logo-linkie-black.png';
 import logoText from '../image/Linkie.png';
@@ -15,9 +16,9 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
-  const navigate = useNavigate();
-  // Removed useLocation as per instruction, 'from' will default to null
-  const from = null; 
+  const navigate = useNavigate(); // Added missing navigate hook
+  const location = useLocation();
+  const from = (location.state as any)?.from?.pathname; 
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,8 +45,13 @@ export default function LoginPage() {
       } else {
         navigate('/');
       }
-    } catch {
-      setError('Email hoặc mật khẩu không đúng.');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const serverMessage = err.response?.data?.message as string | undefined;
+        setError(serverMessage || 'Email hoặc mật khẩu không đúng.');
+      } else {
+        setError('Email hoặc mật khẩu không đúng.');
+      }
     } finally {
       setLoading(false);
     }
