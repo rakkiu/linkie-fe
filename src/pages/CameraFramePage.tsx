@@ -111,9 +111,16 @@ export default function CameraFramePage() {
       link.download = `linkie-${event?.name.replace(/\s+/g, '-').toLowerCase() || 'photo'}-${Date.now()}.jpg`;
       link.href = canvas.toDataURL('image/jpeg', 0.92);
       link.click();
+
+      // 5) Record usage in BE
+      if (id && frame.id) {
+        eventService.recordFrameUsage(id, frame.id).catch(err => {
+          console.error('Failed to record frame usage:', err);
+        });
+      }
     };
     img.src = frame.assetUrl;
-  }, [frames, selectedFrameIdx, event]);
+  }, [frames, selectedFrameIdx, event, id]);
 
   if (loading) {
     return (

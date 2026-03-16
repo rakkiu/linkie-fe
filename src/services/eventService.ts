@@ -88,4 +88,9 @@ export const eventService = {
       isActive: f.isActive
     }));
   },
+
+  /** POST — Ghi nhận lượt sử dụng Frame (chụp ảnh) */
+  recordFrameUsage: async (eventId: string, frameId: string): Promise<void> => {
+    await apiClient.post(`/events/${eventId}/frames/${frameId}/usage`);
+  },
 };
