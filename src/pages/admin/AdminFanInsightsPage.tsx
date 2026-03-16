@@ -68,7 +68,9 @@ export default function AdminFanInsightsPage() {
   const [selectedFanId, setSelectedFanId] = useState<string | null>(null);
   const [profile, setProfile] = useState<FanProfile | null>(null);
   const [search, setSearch] = useState('');
-  const [engagementFilter, setEngagementFilter] = useState('All');
+  const [engagementFilter, setEngagementFilter] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [error, setError] = useState('');
@@ -104,6 +106,7 @@ export default function AdminFanInsightsPage() {
       if (insightsData.length > 0 && !selectedFanId) {
         setSelectedFanId(insightsData[0].userId);
       }
+      setCurrentPage(1); // Reset pagination on new insights load
     } catch (err) {
       setError('Không thể tải dữ liệu Fan Insights.');
     } finally {
@@ -135,7 +138,7 @@ export default function AdminFanInsightsPage() {
     loadProfile();
   }, [selectedEventId, selectedFanId]);
 
-  const filtered = insights.filter(f => {
+  const filteredInsights = insights.filter(f => {
     const matchesSearch = f.name.toLowerCase().includes(search.toLowerCase()) || 
                           f.email.toLowerCase().includes(search.toLowerCase());
     const level = getEngagementLevel(f.totalPhotos, f.totalMessages);
@@ -143,7 +146,15 @@ export default function AdminFanInsightsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  const handleExport = () => {
+  const totalPages = Math.ceil(filteredInsights.length / itemsPerPage);
+  const pagedInsights = filteredInsights.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, engagementFilter]);
+
+  const handleExportExcel = () => {
     if (!insights.length) return;
     const dataToExport = insights.map(f => ({
       'Họ và tên': f.name,
@@ -222,7 +233,7 @@ export default function AdminFanInsightsPage() {
           </button>
 
           <button 
-            onClick={handleExport}
+            onClick={handleExportExcel}
             disabled={!insights.length}
             style={{
               padding: '10px 24px',
@@ -266,7 +277,7 @@ export default function AdminFanInsightsPage() {
         </div>
         <select
           value={engagementFilter}
-          onChange={e => setEngagementFilter(e.target.value)}
+          onChange={e => setEngagementFilter(e.target.value as 'All' | 'High' | 'Medium' | 'Low')}
           style={{
             background: 'rgba(255,255,255,0.06)',
             border: '1px solid rgba(255,255,255,0.15)',
@@ -309,29 +320,73 @@ export default function AdminFanInsightsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.length === 0 ? (
+                  {pagedInsights.length === 0 ? (
                     <tr>
                       <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#666' }}>Không tìm thấy fan nào.</td>
                     </tr>
-                  ) : filtered.map((f) => (
+                  ) : pagedInsights.map((fan) => (
                     <tr
-                      key={f.userId}
-                      onClick={() => setSelectedFanId(f.userId)}
+                      key={fan.userId}
+                      onClick={() => setSelectedFanId(fan.userId)}
                       style={{
                         cursor: 'pointer',
-                        background: selectedFanId === f.userId ? 'rgba(0,188,212,0.1)' : 'transparent',
+                        background: selectedFanId === fan.userId ? 'rgba(0,188,212,0.1)' : 'transparent',
                         transition: 'background 0.2s',
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = selectedFanId === fan.userId ? 'rgba(0,188,212,0.05)' : 'transparent'}
                     >
-                      <td style={{ ...cellStyle, fontWeight: 700, color: 'white' }}>{f.name}</td>
-                      <td style={cellStyle}>{f.email}</td>
-                      <td style={{ ...cellStyle, textAlign: 'center', fontWeight: 800, color: '#00bcd4' }}>{f.totalPhotos}</td>
-                      <td style={{ ...cellStyle, fontSize: '11px', color: '#999' }}>{f.usedFrames || 'N/A'}</td>
-                      <td style={{ ...cellStyle, textAlign: 'center', fontWeight: 800, color: '#e91e8c' }}>{f.totalMessages}</td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: 'white' }}>{fan.name}</td>
+                      <td style={cellStyle}>{fan.email}</td>
+                      <td style={{ ...cellStyle, textAlign: 'center', fontWeight: 800, color: '#00bcd4' }}>{fan.totalPhotos}</td>
+                      <td style={{ ...cellStyle, fontSize: '11px', color: '#999' }}>{fan.usedFrames || 'N/A'}</td>
+                      <td style={{ ...cellStyle, textAlign: 'center', fontWeight: 800, color: '#e91e8c' }}>{fan.totalMessages}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <button 
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: currentPage === 1 ? '#444' : 'white', padding: '6px 12px', borderRadius: '4px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: '12px' }}
+                  >
+                    Trước
+                  </button>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        style={{ 
+                          width: '32px', 
+                          height: '32px', 
+                          borderRadius: '4px', 
+                          border: 'none',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          background: currentPage === p ? '#00bcd4' : 'rgba(255,255,255,0.05)',
+                          color: 'white',
+                          fontWeight: currentPage === p ? 700 : 400
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: currentPage === totalPages ? '#444' : 'white', padding: '6px 12px', borderRadius: '4px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: '12px' }}
+                  >
+                    Sau
+                  </button>
+                </div>
+              )}
+
               <div style={{ padding: '16px 20px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: '24px' }}>

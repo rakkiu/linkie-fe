@@ -23,6 +23,28 @@ export interface FanWishwallMessage {
   sentiment: number;
 }
 
+export interface LiveMessage {
+  userName: string;
+  content: string;
+  createdAt: string;
+  sentiment: number;
+}
+
+export interface FrameStats {
+  frameName: string;
+  usageCount: number;
+}
+
+export interface DashboardSummary {
+  totalParticipants: number;
+  totalPhotos: number;
+  totalPhotographers: number;
+  activeFramesCount: number;
+  frameUsageStats: FrameStats[];
+  sentimentSummary: Record<string, number>;
+  recentLiveMessages: LiveMessage[];
+}
+
 export interface FanProfile {
   userId: string;
   name: string;
@@ -44,5 +66,14 @@ export const adminFanInsightsService = {
   getEventFrameStats: async (eventId: string): Promise<{ frames: { frameName: string, usage: number }[] }> => {
     const response = await apiClient.get(`/admin/events/${eventId}/analytics/frame-usage?_t=${Date.now()}`);
     return response.data.data ?? response.data;
+  },
+
+  getDashboardSummary: async (eventId: string): Promise<DashboardSummary> => {
+    const response = await apiClient.get(`/admin/events/${eventId}/dashboard-summary?_t=${Date.now()}`);
+    return response.data.data ?? response.data;
+  },
+
+  clearLed: async (eventId: string): Promise<void> => {
+    await apiClient.post(`/admin/events/${eventId}/wishwall/clear-led`);
   },
 };

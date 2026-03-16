@@ -99,11 +99,11 @@ export default function WishwallModerationPage() {
   }, [selectedEventId]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
-  const handleDisplay = async (msg: PendingWishwallMessage) => {
+  const handleDisplay = async (msg: PendingWishwallMessage, sentiment: string = 'Neutral') => {
     if (!selectedEventId || actionId) return;
-    setActionId(`display-${msg.id}`);
+    setActionId(`display-${msg.id}-${sentiment}`);
     try {
-      await wishwallApi.approveMessage(selectedEventId, msg.id);
+      await wishwallApi.approveMessage(selectedEventId, msg.id, sentiment);
       await wishwallApi.displayOnLed(selectedEventId, msg.id);
       setMessages(prev => prev.filter(m => m.id !== msg.id));
     } catch {
@@ -113,8 +113,17 @@ export default function WishwallModerationPage() {
     }
   };
 
-  const handleReject = (id: string) => {
-    setMessages(prev => prev.filter(m => m.id !== id));
+  const handleReject = async (msg: PendingWishwallMessage) => {
+    if (!selectedEventId || actionId) return;
+    setActionId(`reject-${msg.id}`);
+    try {
+      await wishwallApi.rejectMessage(selectedEventId, msg.id);
+      setMessages(prev => prev.filter(m => m.id !== msg.id));
+    } catch {
+      // ignore
+    } finally {
+      setActionId(null);
+    }
   };
 
   // ── Event picker screen ────────────────────────────────────────────────────
@@ -268,18 +277,26 @@ export default function WishwallModerationPage() {
                 <div className="flex gap-3 pt-4 border-t border-white/5">
                   <button
                     disabled={!!actionId}
-                    onClick={() => handleDisplay(msg)}
-                    className="flex-1 py-3 rounded-2xl bg-teal-500 text-black text-xs font-bold uppercase tracking-widest hover:bg-teal-400 transition-all disabled:opacity-40"
+                    onClick={() => handleDisplay(msg, 'Positive')}
+                    className="flex-1 py-3 rounded-2xl bg-emerald-500 text-black text-[10px] font-extrabold uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-40"
                   >
-                    {actionId === `display-${msg.id}` ? 'Đang đẩy…' : '🖥 Push to LED'}
+                    {actionId === `display-${msg.id}-Positive` ? 'Wait...' : '✅ POSITIVE'}
                   </button>
 
                   <button
                     disabled={!!actionId}
-                    onClick={() => handleReject(msg.id)}
-                    className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:text-rose-400 hover:border-rose-500/50 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40"
+                    onClick={() => handleDisplay(msg, 'Neutral')}
+                    className="flex-1 py-3 rounded-2xl bg-white text-black text-[10px] font-extrabold uppercase tracking-widest hover:bg-gray-200 transition-all disabled:opacity-40"
                   >
-                    ✕
+                    {actionId === `display-${msg.id}-Neutral` ? 'Wait...' : '📄 NEUTRAL'}
+                  </button>
+
+                  <button
+                    disabled={!!actionId}
+                    onClick={() => handleReject(msg)}
+                    className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-rose-500/60 hover:text-rose-400 hover:border-rose-500/50 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40"
+                  >
+                    {actionId === `reject-${msg.id}` ? '...' : '✕'}
                   </button>
                 </div>
               </li>
