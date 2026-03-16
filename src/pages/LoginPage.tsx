@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const GoogleIcon = () => (
@@ -36,8 +37,13 @@ export default function LoginPage() {
       } else {
         navigate('/');
       }
-    } catch {
-      setError('Email hoặc mật khẩu không đúng.');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const serverMessage = err.response?.data?.message as string | undefined;
+        setError(serverMessage || 'Email hoặc mật khẩu không đúng.');
+      } else {
+        setError('Email hoặc mật khẩu không đúng.');
+      }
     } finally {
       setLoading(false);
     }
