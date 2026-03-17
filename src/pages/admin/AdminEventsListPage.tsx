@@ -3,14 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from './AdminLayout';
 import { adminEventService, type ApiEvent, type EventFormData, type ArFrame, mapStatusToString } from '../../services/adminEventService';
+import { formatToLocalDateTime } from '../../lib/dateUtils';
+import ImageCropperModal from '../../components/admin/ImageCropperModal';
 
 function formatDateTime(iso: string) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleString('en-US', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+  return formatToLocalDateTime(iso);
 }
 
 export default function AdminEventsListPage() {
@@ -34,6 +31,10 @@ export default function AdminEventsListPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Image Cropper States
+  const [cropperImage, setCropperImage] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   // Filter and Sort states
   const [filterStatus, setFilterStatus] = useState<string>('All');
@@ -178,12 +179,17 @@ export default function AdminEventsListPage() {
 
   const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    setEditThumbnailFile(file);
     if (file) {
-      setEditThumbnailPreview(URL.createObjectURL(file));
-    } else {
-      setEditThumbnailPreview(null);
+      setCropperImage(URL.createObjectURL(file));
+      setShowCropper(true);
     }
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    setEditThumbnailFile(croppedFile);
+    setEditThumbnailPreview(URL.createObjectURL(croppedFile));
+    setShowCropper(false);
+    setCropperImage(null);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -228,6 +234,18 @@ export default function AdminEventsListPage() {
 
     // Sort
     result.sort((a, b) => {
+      // 1. Nếu đang xem "All Status" (hoặc role Staff), ưu tiên sắp xếp theo trạng thái: Upcoming (0) > Ongoing (1) > Finished (2)
+      if (filterStatus === 'All' || isStaff) {
+        const order: Record<string, number> = { 'Upcoming': 0, 'Ongoing': 1, 'Finished': 2 };
+        const statusA = typeof a.status === 'string' ? a.status : mapStatusToString(a.status);
+        const statusB = typeof b.status === 'string' ? b.status : mapStatusToString(b.status);
+        
+        if (order[statusA] !== order[statusB]) {
+          return order[statusA] - order[statusB];
+        }
+      }
+
+      // 2. Tiếp tục sắp xếp theo tiêu chí sortBy hiện tại
       let comparison = 0;
       switch (sortBy) {
         case 'time-asc':
@@ -438,73 +456,68 @@ export default function AdminEventsListPage() {
             </div>
             
             <div style={{ padding: '0 40px 40px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: '32px', marginTop: '32px' }}>
-                {/* Left Side: Form */}
-                <form id="edit-event-form" onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '32px' }}>
-                    {/* Form Fields Side */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                          <label style={labelStyle}>EVENT NAME</label>
-                          <input required value={editFormData.name} onChange={e => setEditFormData({ ...editFormData, name: e.target.value })} style={inputStyle} />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>STATUS</label>
-                          <select style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }} value={editFormData.status} onChange={e => setEditFormData({ ...editFormData, status: e.target.value as any })}>
-                            <option value="Upcoming">Upcoming</option>
-                            <option value="Ongoing">Ongoing (Live)</option>
-                            <option value="Finished">Finished</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                          <label style={labelStyle}>START DATE</label>
-                          <input type="date" className="date-icon-white" required value={editFormData.startTime} onChange={e => setEditFormData({ ...editFormData, startTime: e.target.value })} style={inputStyle} />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>END DATE</label>
-                          <input type="date" className="date-icon-white" required value={editFormData.endTime} onChange={e => setEditFormData({ ...editFormData, endTime: e.target.value })} style={inputStyle} />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label style={labelStyle}>LOCATION</label>
-                        <input value={editFormData.location} onChange={e => setEditFormData({ ...editFormData, location: e.target.value })} style={inputStyle} />
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                          <label style={labelStyle}>MAX PAX</label>
-                          <input type="number" min={1} value={editFormData.maxParticipants} onChange={e => setEditFormData({ ...editFormData, maxParticipants: Number(e.target.value) })} style={inputStyle} />
-                        </div>
-                        <div style={{ alignSelf: 'center', marginTop: '20px' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={editFormData.isWishwallEnabled} onChange={e => setEditFormData({ ...editFormData, isWishwallEnabled: e.target.checked })} style={{ accentColor: '#00e676', width: '18px', height: '18px' }} />
-                            <span style={{ fontSize: '14px', fontWeight: 600 }}>Enable Wishwall</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Thumbnail Side */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px 320px', gap: '24px', marginTop: '32px' }}>
+                {/* 1st Column: Form Fields */}
+                <form id="edit-event-form" onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label style={labelStyle}>THUMBNAIL IMAGE</label>
-                      <div onClick={() => fileInputRef.current?.click()} style={{ width: '100%', height: '240px', borderRadius: '12px', border: '2px dashed rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}>
-                        {editThumbnailPreview ? <img src={editThumbnailPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ textAlign: 'center', color: '#00e5ff' }}> <div style={{ fontSize: '32px' }}>🖼️</div> <div style={{ fontSize: '12px', fontWeight: 600 }}>Click to change thumbnail</div> </div>}
-                      </div>
-                      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleEditFileChange} />
-                      {editThumbnailFile && <div style={{ color: '#00e676', fontSize: '11px', marginTop: '8px', fontWeight: 600 }}>✓ {editThumbnailFile.name}</div>}
+                      <label style={labelStyle}>EVENT NAME</label>
+                      <input required value={editFormData.name} onChange={e => setEditFormData({ ...editFormData, name: e.target.value })} style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>STATUS</label>
+                      <select style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }} value={editFormData.status} onChange={e => setEditFormData({ ...editFormData, status: e.target.value as any })}>
+                        <option value="Upcoming">Upcoming</option>
+                        <option value="Ongoing">Ongoing (Live)</option>
+                        <option value="Finished">Finished</option>
+                      </select>
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end', gap: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '24px' }}>
-                    <button type="button" onClick={closeEditModal} style={{ padding: '12px 28px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#999', fontWeight: 700, cursor: 'pointer' }}> CANCEL </button>
-                    <button type="submit" disabled={editLoading} style={{ padding: '12px 36px', borderRadius: '10px', border: 'none', background: editLoading ? '#333' : 'linear-gradient(135deg, #00e5ff, #00b0ff)', color: 'white', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 20px rgba(0, 176, 255, 0.2)' }}> {editLoading ? 'SAVING...' : 'SAVE CHANGES'} </button>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={labelStyle}>START DATE</label>
+                      <input type="date" className="date-icon-white" required value={editFormData.startTime} onChange={e => setEditFormData({ ...editFormData, startTime: e.target.value })} style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>END DATE</label>
+                      <input type="date" className="date-icon-white" required value={editFormData.endTime} onChange={e => setEditFormData({ ...editFormData, endTime: e.target.value })} style={inputStyle} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>LOCATION</label>
+                    <input value={editFormData.location} onChange={e => setEditFormData({ ...editFormData, location: e.target.value })} style={inputStyle} />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={labelStyle}>MAX PAX</label>
+                      <input type="number" min={1} value={editFormData.maxParticipants} onChange={e => setEditFormData({ ...editFormData, maxParticipants: Number(e.target.value) })} style={inputStyle} />
+                    </div>
+                    <div style={{ alignSelf: 'center', marginTop: '16px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={editFormData.isWishwallEnabled} onChange={e => setEditFormData({ ...editFormData, isWishwallEnabled: e.target.checked })} style={{ accentColor: '#00e676', width: '18px', height: '18px' }} />
+                        <span style={{ fontSize: '14px', fontWeight: 600 }}>Enable Wishwall</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '20px' }}>
+                    <button type="button" onClick={closeEditModal} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#999', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}> CANCEL </button>
+                    <button type="submit" form="edit-event-form" disabled={editLoading} style={{ flex: 1.5, padding: '10px', borderRadius: '8px', border: 'none', background: editLoading ? '#333' : 'linear-gradient(135deg, #00e5ff, #00b0ff)', color: 'white', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 16px rgba(0, 176, 255, 0.2)', fontSize: '13px' }}> {editLoading ? 'SAVING...' : 'SAVE CHANGES'} </button>
                   </div>
                 </form>
+
+                {/* 2nd Column: Thumbnail */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={labelStyle}>THUMBNAIL IMAGE</label>
+                  <div onClick={() => fileInputRef.current?.click()} style={{ width: '100%', height: '240px', borderRadius: '12px', border: '2px dashed rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}>
+                    {editThumbnailPreview ? <img src={editThumbnailPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ textAlign: 'center', color: '#00e5ff' }}> <div style={{ fontSize: '32px' }}>🖼️</div> <div style={{ fontSize: '12px', fontWeight: 600 }}>Click to change thumbnail</div> </div>}
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleEditFileChange} />
+                  {editThumbnailFile && <div style={{ color: '#00e676', fontSize: '11px', marginTop: '8px', fontWeight: 600 }}>✓ {editThumbnailFile.name}</div>}
+                </div>
 
                 {/* Right Side: AR Frames Section */}
                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '32px' }}>
@@ -579,6 +592,16 @@ export default function AdminEventsListPage() {
           </div>
           <div style={{ position: 'absolute', top: '30px', right: '40px', color: 'white', fontSize: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', transition: 'all 0.2s' }}>✕</div>
         </div>
+      )}
+      {showCropper && cropperImage && (
+        <ImageCropperModal
+          image={cropperImage}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setShowCropper(false);
+            setCropperImage(null);
+          }}
+        />
       )}
     </AdminLayout>
   );

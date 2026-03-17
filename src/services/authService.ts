@@ -10,8 +10,8 @@ export const authService = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     // We use a clean axios instance here to avoid the interceptor attaching a non-existent token for login
     const response = await axios.post(`${BASE_URL}/Auth/login`, {
-      email,
-      password,
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
     });
     
     // Response wrapper expected: { statusCode: 200, data: { accessToken: "..." } }
@@ -34,6 +34,15 @@ export const authService = {
   },
 
   forgotPassword: async (email: string): Promise<void> => {
-    await axios.post(`${BASE_URL}/Auth/forgot-password`, { email });
+    await axios.post(`${BASE_URL}/Auth/forgetPassword`, { email: email.trim().toLowerCase() });
+
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<void> => {
+    await axios.post(`${BASE_URL}/Auth/resetPassword`, { token, newPassword });
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    await axios.post(`${BASE_URL}/Auth/changePassword`, { currentPassword, newPassword });
   }
 };

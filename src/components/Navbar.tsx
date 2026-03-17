@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logoLinkie from '../image/logo-linkie-black.png';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -8,17 +9,30 @@ export default function Navbar() {
     <nav className="flex items-center justify-between px-4 py-3 bg-[#0a0a1a]/90 backdrop-blur-md fixed top-0 left-0 right-0 z-50 border-b border-white/5">
       <Link to="/" className="flex items-center gap-2">
         <img
-          src="/image.png"
-          alt="Linkle logo"
+          src={logoLinkie}
+          alt="Linkie logo"
           className="h-8 w-auto object-contain"
         />
-        <div style={{ color: '#00bcd4', fontWeight: 800, fontSize: '14px', lineHeight: 1 }}>Linkle</div>
+        <div style={{ color: '#00bcd4', fontWeight: 800, fontSize: '14px', lineHeight: 1 }}>Linkie</div>
       </Link>
 
       <div className="flex gap-5 text-sm font-medium text-gray-200">
         <Link to="/" className="hover:text-white transition-colors">
           Trang chủ
         </Link>
+        <Link to="/events" className="hover:text-white transition-colors">
+          Sự kiện
+        </Link>
+        {(user?.role === 'admin' || user?.role === 'staff') && (
+          <Link to="/staff/wishwall" className="text-purple-400 hover:text-purple-300 transition-colors">
+            Duyệt Wishwall
+          </Link>
+        )}
+        {(user?.role === 'admin' || user?.role === 'led') && (
+          <Link to="/led" className="text-teal-400 hover:text-teal-300 transition-colors">
+            Màn hình LED
+          </Link>
+        )}
         <a href="/#about" className="hover:text-white transition-colors">
           Về chúng tôi
         </a>

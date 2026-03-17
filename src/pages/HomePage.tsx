@@ -1,16 +1,21 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
+
+import logoLinkie from '../image/Linkie.png';
+import logoLinkieWhite from '../image/logo-linkie-white.png';
+
 import bannerIntro from '../image/banner-intro.jpg';
 import bannerWishwall from '../image/banner-wishwall.jpg';
 import bannerCameraFrame from '../image/banner-CameraFrame.jpg';
-import { useState, useEffect } from 'react';
-import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
 
 const LKLogoCard = () => (
   <div className="w-[104px] h-[104px] bg-white rounded-[32px] flex items-center justify-center flex-shrink-0 shadow-lg p-3 border-3 border-[#00d5ff]">
     <img
-      src="/image.png"
-      alt="Linkle logo"
+      src={logoLinkieWhite}
+      alt="Linkie logo"
       className="w-full h-full object-contain"
     />
   </div>
@@ -18,15 +23,23 @@ const LKLogoCard = () => (
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (user?.role === 'staff') {
+      navigate('/staff/wishwall', { replace: true });
+      return;
+    }
+    if (user?.role === 'led') {
+      navigate('/led', { replace: true });
+      return;
+    }
+
     const fetchEvents = async () => {
       try {
-        // Gọi API với status="Active" để lấy chỉ các sự kiện Active
         const data = await eventService.getAllEvents('Active');
-        // Lọc thêm: chỉ hiện sự kiện chưa kết thúc (live hoặc upcoming)
         const visibleEvents = data.filter(e => getEventStatus(e) !== 'past');
         setEvents(visibleEvents);
       } catch (err) {
@@ -36,7 +49,7 @@ export default function HomePage() {
       }
     };
     fetchEvents();
-  }, []);
+  }, [user, navigate]);
 
   return (
     <div className="bg-[#0a0a1a] min-h-screen text-white pb-20">
@@ -69,12 +82,9 @@ export default function HomePage() {
 
         <div className="flex items-start gap-4 mb-5">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <img src="/image.png" alt="Linkle" className="h-10 w-auto" />
-              <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Linkle</span>
-            </div>
+            <img src={logoLinkie} alt="Linkie" className="h-15 w-auto mb-2" />
             <p className="text-xs text-gray-400 leading-relaxed">
-              Linkle là nền tảng kết nối tương tác trực tiếp tại sự kiện thông qua công nghệ
+              Linkie là nền tảng kết nối tương tác trực tiếp tại sự kiện thông qua công nghệ
               Camera và Wishwall, giúp biến mỗi cá nhân trở thành một phần di sản của không
               gian nghệ thuật.
             </p>
@@ -191,8 +201,12 @@ export default function HomePage() {
               return (
                 <div key={event.id} className="block">
                   <div
-                    className="relative rounded-2xl overflow-hidden border border-[#00bcd4]/40 hover:border-[#00bcd4]/80 cursor-pointer shadow-lg shadow-[#00e5ff]/5"
-                    onClick={() => navigate(`/events/${event.id}`)}
+                    className={`relative rounded-2xl overflow-hidden border transition-colors ${
+                      status === 'live'
+                        ? 'border-[#00bcd4]/40 hover:border-[#00bcd4]/80 cursor-pointer shadow-lg shadow-[#00e5ff]/5'
+                        : 'border-white/10 opacity-70 cursor-not-allowed'
+                    }`}
+                    onClick={() => status === 'live' && navigate(`/events/${event.id}`)}
                   >
                     {/* Status badge */}
                     <div className="absolute top-3 left-3 z-10">
@@ -235,13 +249,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────── */}
       <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
-        <div className="flex items-center justify-center gap-2 mb-0.5">
-          <img src="/image.png" alt="Linkle" className="h-6 w-auto" />
-          <span className="text-sm font-bold text-[#00bcd4]">Linkle</span>
-        </div>
-        <p className="text-gray-500 text-[10px]">
+        <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
+        <p className="text-gray-500 text-[10px] mt-0.5">
           Xóa nhòa khoảng cách giữa sân khấu và khán giả.
         </p>
       </footer>

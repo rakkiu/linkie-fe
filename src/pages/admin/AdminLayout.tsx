@@ -1,18 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import logoLinkieWhite from '../../image/logo-linkie-white.png';
 
-const LKLogo = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <circle cx="16" cy="16" r="16" fill="url(#logoGrad)" />
-    <text x="8" y="22" fill="white" fontSize="16" fontWeight="bold" fontFamily="Arial">LL</text>
-    <defs>
-      <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32">
-        <stop offset="0%" stopColor="#00bcd4" />
-        <stop offset="100%" stopColor="#e91e8c" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
+
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -55,9 +45,13 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
       }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', paddingLeft: '4px' }}>
-          <LKLogo />
+          <img 
+            src={logoLinkieWhite} 
+            alt="Linkie" 
+            style={{ width: '32px', height: '32px', objectFit: 'contain' }} 
+          />
           <div>
-            <div style={{ color: '#00bcd4', fontWeight: 800, fontSize: '13px', lineHeight: 1 }}>Linkle</div>
+            <div style={{ color: '#00bcd4', fontWeight: 800, fontSize: '13px', lineHeight: 1 }}>Linkie</div>
             <div style={{ color: 'white', fontWeight: 700, fontSize: '10px', letterSpacing: '2px' }}>ADMIN</div>
           </div>
         </div>

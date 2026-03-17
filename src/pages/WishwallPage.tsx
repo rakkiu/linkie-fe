@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { eventService, type PublicEvent } from '../services/eventService';
+import { wishwallApi } from '../services/wishwallService';
 
 interface Bubble {
   id: number;
@@ -43,21 +44,29 @@ export default function WishwallPage() {
     setBubbles(prev => prev.filter(b => b.id !== bubbleId));
   }, []);
 
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
     const text = input.trim();
-    if (!text) return;
+    if (!text || !id) return;
 
-    const bubble: Bubble = {
-      id: nextId++,
-      text,
-      x: 10 + Math.random() * 55,
-      startY: 60 + Math.random() * 20,
-    };
+    // Gửi lên server
+    try {
+      await wishwallApi.sendMessage(id, text);
+      
+      const bubble: Bubble = {
+        id: nextId++,
+        text,
+        x: 10 + Math.random() * 55,
+        startY: 60 + Math.random() * 20,
+      };
 
-    setBubbles(prev => [...prev, bubble]);
-    setInput('');
-    inputRef.current?.focus();
-  }, [input]);
+      setBubbles(prev => [...prev, bubble]);
+      setInput('');
+      inputRef.current?.focus();
+    } catch (err) {
+      console.error('Failed to send message', err);
+      alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
+    }
+  }, [input, id]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') sendMessage();

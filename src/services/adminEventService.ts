@@ -70,6 +70,17 @@ export const mapStatusToString = (status: any): EventStatus => {
   return map[status] ?? 'Upcoming';
 };
 
+/**
+ * Ensures a URL is absolute for images/assets.
+ */
+export const ensureImageUrl = (url: string | null): string => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:')) return url;
+  // If it's a relative path (e.g. /uploads/...), prepend server URL
+  const baseUrl = 'http://localhost:5002';
+  return url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
+};
+
 const buildFormData = (eventData: EventFormData, thumbnailFile?: File | null): FormData => {
   const formData = new FormData();
   formData.append('Name', eventData.name);
@@ -83,7 +94,8 @@ const buildFormData = (eventData: EventFormData, thumbnailFile?: File | null): F
     formData.append('Status', eventData.status);
   }
   if (thumbnailFile) {
-    formData.append('thumbnail', thumbnailFile);
+    // API expects "Thumbnail" case sensitive
+    formData.append('Thumbnail', thumbnailFile);
   }
   return formData;
 };
@@ -99,7 +111,8 @@ export const adminEventService = {
     // Map status from numbers to strings if necessary
     return data.map((event: any) => ({
       ...event,
-      status: mapStatusToString(event.status)
+      status: mapStatusToString(event.status),
+      thumbnailUrl: ensureImageUrl(event.thumbnailUrl)
     }));
   },
 
@@ -138,7 +151,7 @@ export const adminEventService = {
     return data.map((f: any) => ({
       id: f.id,
       name: f.frameName || f.name,
-      assetUrl: f.frameUrl || f.assetUrl,
+      assetUrl: ensureImageUrl(f.frameUrl || f.assetUrl),
       isActive: f.isActive
     }));
   },

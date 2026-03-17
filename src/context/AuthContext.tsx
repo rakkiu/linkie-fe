@@ -15,6 +15,8 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -46,24 +48,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      await authService.login(email, password);
-      
-      // Determine role from provided credentials logic or JWT payload (for now, simply mapping admin email to admin role)
-      if (email.toLowerCase().includes('admin')) {
-        setUser({ name: 'Admin', email, role: 'admin' });
-      } else if (email.toLowerCase().includes('staff')) {
-        setUser({ name: 'Staff User', email, role: 'staff' });
-      } else if (email.toLowerCase().includes('organizer')) {
-        setUser({ name: 'Organizer User', email, role: 'organizer' });
-      } else if (email.toLowerCase().includes('led')) {
-        setUser({ name: 'LED Display', email, role: 'led' });
-      } else {
-        const name = email.split('@')[0];
-        setUser({ name, email, role: 'user' });
-      }
-    } catch (err) {
-      throw err;
+    await authService.login(email, password);
+
+    // Determine role from provided credentials logic or JWT payload (for now, simply mapping admin email to admin role)
+    if (email.toLowerCase().includes('admin')) {
+      setUser({ name: 'Admin', email, role: 'admin' });
+    } else if (email.toLowerCase().includes('staff')) {
+      setUser({ name: 'Staff User', email, role: 'staff' });
+    } else if (email.toLowerCase().includes('organizer')) {
+      setUser({ name: 'Organizer User', email, role: 'organizer' });
+    } else if (email.toLowerCase().includes('led')) {
+      setUser({ name: 'LED Display', email, role: 'led' });
+    } else {
+      const name = email.split('@')[0];
+      setUser({ name, email, role: 'user' });
     }
   };
 
@@ -85,8 +83,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authService.forgotPassword(email);
   };
 
+  const resetPassword = async (token: string, newPassword: string) => {
+    await authService.resetPassword(token, newPassword);
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    await authService.changePassword(currentPassword, newPassword);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, forgotPassword }}>
+    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, forgotPassword, resetPassword, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

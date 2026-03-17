@@ -2,6 +2,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useEffect, useState } from 'react';
 import { eventService, type PublicEvent } from '../services/eventService';
+import logoLinkie from '../image/Linkie.png';
 
 const CameraIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -120,11 +121,8 @@ export default function EventDetailPage() {
 
       {/* ── Footer ─────────────────────────────────── */}
       <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
-        <div className="flex items-center justify-center gap-2 mb-0.5">
-          <img src="/image.png" alt="Linkle" className="h-6 w-auto" />
-          <span className="text-sm font-bold text-[#00bcd4]">Linkle</span>
-        </div>
-        <p className="text-gray-500 text-[10px]">
+        <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
+        <p className="text-gray-500 text-[10px] mt-0.5">
           Xóa nhòa khoảng cách giữa sân khấu và khán giả.
         </p>
       </footer>
