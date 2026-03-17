@@ -12,7 +12,6 @@ export default function AdminDashboardPage() {
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   // 1. Load initial events
   useEffect(() => {

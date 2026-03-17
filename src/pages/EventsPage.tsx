@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
+import logoLinkie from '../image/Linkie.png';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'live' | 'upcoming'>('all');
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const data = await eventService.getAllEvents();
-        // Sort: Live first, then Upcoming, then Past
+        const data = await eventService.getAllEvents('Active');
+        // Sort: Live first, then Upcoming
         const sorted = [...data].sort((a, b) => {
           const statusA = getEventStatus(a);
           const statusB = getEventStatus(b);
-          const order = { live: 0, upcoming: 1, past: 2 };
-          return order[statusA] - order[statusB];
+          if (statusA === 'live' && statusB !== 'live') return -1;
+          if (statusA !== 'live' && statusB === 'live') return 1;
+          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
         });
         setEvents(sorted);
-      } catch (error) {
-        console.error('Failed to fetch events:', error);
+      } catch (err) {
+        console.error('Failed to fetch events', err);
       } finally {
         setLoading(false);
       }
@@ -30,127 +31,108 @@ export default function EventsPage() {
     fetchEvents();
   }, []);
 
-  const filteredEvents = events.filter(ev => {
-    if (filter === 'all') return true;
-    return getEventStatus(ev) === filter;
-  });
-
   const formatDate = (isoStr: string) => {
-    const d = new Date(isoStr);
-    const month = d.getMonth() + 1;
-    const day = String(d.getDate()).padStart(2, '0');
-    return { month: `Tháng ${month}`, day };
+    const date = new Date(isoStr);
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   const getYear = (isoStr: string) => new Date(isoStr).getFullYear();
 
   return (
-    <div className="min-h-screen bg-[#0f1221] text-white pt-20 pb-12 overflow-x-hidden">
+    <div className="min-h-screen bg-[#0f1221] text-white pt-20 pb-20 overflow-x-hidden">
       <Navbar />
 
       <div className="max-w-xl mx-auto px-6">
-        {/* Header section */}
-        <div className="flex items-center gap-4 mb-8">
-          <button 
+        <header className="mb-8">
+          <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+            className="flex items-center gap-4 text-white hover:opacity-70 transition-opacity"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
             </svg>
+            <h1 className="text-[32px] font-bold leading-tight tracking-tight">
+              Sự kiện
+            </h1>
           </button>
-          <h1 className="text-2xl font-bold tracking-tight">Sự kiện</h1>
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-          <button 
-            onClick={() => setFilter('all')}
-            className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${filter === 'all' ? 'bg-teal-500 text-black shadow-lg shadow-teal-500/20' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'}`}
-          >
-            Tất cả
-          </button>
-          <button 
-            onClick={() => setFilter('live')}
-            className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${filter === 'live' ? 'bg-teal-500 text-black shadow-lg shadow-teal-500/20' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'}`}
-          >
-            Đang diễn ra
-          </button>
-          <button 
-            onClick={() => setFilter('upcoming')}
-            className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${filter === 'upcoming' ? 'bg-teal-500 text-black shadow-lg shadow-teal-500/20' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'}`}
-          >
-            Sắp diễn ra
-          </button>
-        </div>
+        </header>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-            <div className="w-12 h-12 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin mb-4" />
-            <p className="text-white/40 text-sm font-medium uppercase tracking-widest">Đang tải sự kiện</p>
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full" />
           </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="py-20 text-center bg-white/5 border border-white/10 rounded-3xl">
-            <p className="text-4xl mb-4">🎫</p>
-            <p className="text-white/40 italic">Không có sự kiện nào được tìm thấy.</p>
+        ) : events.length === 0 ? (
+          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10">
+            <p className="text-gray-400">Hiện chưa có sự kiện nào.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
-            {filteredEvents.map(ev => {
-              const status = getEventStatus(ev);
-              const { month, day } = formatDate(ev.startTime);
+          <div className="grid gap-6">
+            {events.map((event) => {
+              const status = getEventStatus(event);
+              const fallbackImage = 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=800&q=80';
               
               return (
-                <div 
-                  key={ev.id}
-                  onClick={() => navigate(`/events/${ev.id}`)}
-                  className={`relative group cursor-pointer overflow-hidden rounded-[32px] border transition-all duration-500 shadow-2xl ${
-                    status === 'live' ? 'border-teal-500/50 hover:border-teal-400' : 'border-white/10 hover:border-white/30'
+                <div
+                  key={event.id}
+                  onClick={() => status === 'live' && navigate(`/events/${event.id}`)}
+                  className={`relative group rounded-[32px] overflow-hidden border transition-all duration-300 ${
+                    status === 'live'
+                      ? 'border-teal-500/30 hover:border-teal-400 cursor-pointer shadow-xl shadow-teal-500/10'
+                      : 'border-white/5 opacity-80 cursor-not-allowed'
                   }`}
-                  style={{ aspectRatio: '16/10' }}
                 >
-                  {/* Thumbnail Background */}
-                  <div className="absolute inset-0 z-0">
-                    <img 
-                      src={ev.thumbnailUrl || ''} 
-                      alt={ev.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
-                  </div>
-
-                  {/* Top Badge */}
-                  <div className="absolute top-5 left-5 z-10">
+                  {/* Status Badge */}
+                  <div className="absolute top-4 left-4 z-20">
                     {status === 'live' ? (
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#00bcd4] rounded-lg shadow-lg">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#0a0a1a]">Đang diễn ra</span>
+                      <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-teal-500/30">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-white">Đang diễn ra</span>
                       </div>
                     ) : (
-                      <div className="px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#0a0a1a]">Sắp diễn ra</span>
+                      <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Sắp diễn ra</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Date Box */}
-                  <div className="absolute bottom-10 right-5 z-10 w-20 flex flex-col items-center rounded-2xl bg-[#1a1b2e]/80 backdrop-blur-md border border-white/10 p-2 shadow-2xl">
-                    <span className="text-[10px] font-bold text-white/50 uppercase tracking-tighter mb-1">{month}</span>
-                    <span className="text-3xl font-black text-white leading-none">{day}</span>
+                  {/* Thumbnail */}
+                  <div className="h-56 overflow-hidden">
+                    <img
+                      src={event.thumbnailUrl || fallbackImage}
+                      alt={event.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
                   </div>
 
-                  {/* Event Info */}
-                  <div className="absolute bottom-10 left-8 z-10 pr-24">
-                    <h2 className="text-xl font-black uppercase leading-tight mb-1 group-hover:text-teal-400 transition-colors tracking-tight break-words">
-                      {ev.name}
-                    </h2>
-                    <span className="text-sm font-bold text-white/40 tracking-[0.2em]">
-                      {getYear(ev.startTime)}
-                    </span>
-                  </div>
+                  {/* Overlay Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0f1221] via-[#0f1221]/40 to-transparent" />
 
-                  {/* Inner Glow Border */}
-                  <div className="absolute inset-0 rounded-[32px] border-[1.5px] border-teal-500/0 group-hover:border-teal-400/40 pointer-events-none transition-all duration-500" />
+                  {/* Content */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <div className="flex justify-between items-end">
+                      <div className="flex-1 min-w-0 pr-4">
+                        <p className="text-xs font-bold text-teal-400 uppercase tracking-widest mb-1">
+                          {getYear(event.startTime)}
+                        </p>
+                        <h3 className="text-xl font-black text-white leading-tight uppercase truncate">
+                          {event.name}
+                        </h3>
+                        <p className="text-gray-400 text-xs mt-1 font-medium">{formatDate(event.startTime)}</p>
+                      </div>
+                      
+                      {status === 'live' && (
+                        <div className="w-10 h-10 rounded-2xl bg-teal-500 flex items-center justify-center shadow-lg shadow-teal-500/20 group-hover:scale-110 transition-transform">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -158,13 +140,12 @@ export default function EventsPage() {
         )}
       </div>
 
-      {/* Footer Branding */}
-      <div className="mt-20 flex flex-col items-center">
-        <div className="bg-[#1a1b2e]/60 backdrop-blur-lg border border-white/10 rounded-[32px] px-12 py-8 flex flex-col items-center max-w-sm w-full mx-auto">
-           <div className="text-4xl font-black tracking-tighter mb-2 bg-gradient-to-r from-teal-400 via-white to-pink-500 bg-clip-text text-transparent">Linkie</div>
-           <p className="text-[10px] text-white/40 uppercase tracking-[0.1em] font-medium">Xóa nhòa khoảng cách giữa sân khấu và khán giả.</p>
-        </div>
-      </div>
+      <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
+        <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
+        <p className="text-gray-500 text-[10px] mt-0.5">
+          Xóa nhòa khoảng cách giữa sân khấu và khán giả.
+        </p>
+      </footer>
     </div>
   );
 }
