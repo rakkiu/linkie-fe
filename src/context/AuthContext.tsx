@@ -69,9 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser({ name: 'Google User', email: 'user@gmail.com', role: 'user' });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const register = async (name: string, email: string, _password: string) => {
-    setUser({ name, email, role: 'user' });
+  const register = async (name: string, email: string, password: string) => {
+    await authService.register(name, email, password);
+    await login(email, password);
   };
 
   const logout = () => {
