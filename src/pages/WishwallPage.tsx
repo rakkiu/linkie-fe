@@ -21,7 +21,6 @@ export default function WishwallPage() {
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
-  const [liked, setLiked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // ── Fetch Event ───────────────────────────────────────────────────────────
@@ -83,11 +82,14 @@ export default function WishwallPage() {
   const eventName = event?.name || 'Sự kiện';
 
   return (
-    <div className="bg-[#0d1117] min-h-screen text-white flex flex-col">
-      <Navbar />
+    <div className="bg-[#0d1117] h-[100dvh] w-full text-white relative overflow-hidden flex flex-col">
+      {/* ── Navbar (Fixed/Absolute) ────────────────── */}
+      <div className="absolute top-0 left-0 right-0 z-50">
+        <Navbar />
+      </div>
 
       {/* ── Header ──────────────────────────────────── */}
-      <div className="pt-20 px-6 pb-4">
+      <div className="absolute top-[10dvh] left-0 right-0 px-6 z-10">
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -97,68 +99,55 @@ export default function WishwallPage() {
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-black tracking-tight">{eventName}</h1>
-            <p className="text-[#e91e8c] text-sm font-bold mt-0.5">Wishwall</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-black tracking-tight truncate">{eventName}</h1>
+            <p className="text-[#e91e8c] text-xs font-bold">Wishwall</p>
           </div>
         </div>
       </div>
 
       {/* ── Wishwall bubble area ─────────────────────── */}
-      <div className="flex-1 relative overflow-hidden mx-4 mb-1 min-h-[350px]">
-        <div className="absolute bottom-4 right-4 opacity-60 pointer-events-none">
-          <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-            <path d="M22 38l-1.6-1.45C10 27.2 4 22.1 4 15.5 4 10.3 8.2 6 13.5 6c2.8 0 5.5 1.3 7.5 3.4C23 7.3 25.7 6 28.5 6 33.8 6 38 10.3 38 15.5c0 6.6-6 11.7-16.4 21.05L22 38z" fill="#e91e8c" opacity="0.4"/>
-          </svg>
+      <div className="flex-1 w-full relative overflow-hidden">
+        <div className="absolute inset-0">
+          {bubbles.map(bubble => (
+            <FloatingBubble
+              key={bubble.id}
+              bubble={bubble}
+              onDone={removeBubble}
+            />
+          ))}
         </div>
-
-        {/* Floating bubbles */}
-        {bubbles.map(bubble => (
-          <FloatingBubble
-            key={bubble.id}
-            bubble={bubble}
-            onDone={removeBubble}
-          />
-        ))}
       </div>
 
-      <div className="mx-4 border-t border-white/10 mb-3" />
-
-      {/* ── Input bar ───────────────────────────────── */}
-      <div className="mx-4 mb-8 flex items-center gap-2">
-        <div className="flex-1 flex items-center bg-[#1e2433] rounded-full px-4 h-11 gap-2 border border-white/5">
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Nhập tin nhắn..."
-            maxLength={80}
-            className="flex-1 bg-transparent text-white text-sm placeholder-gray-500 outline-none"
-          />
+      {/* ── Input bar (Fixed at bottom) ─────────────── */}
+      <div className="shrink-0 w-full bg-[#0d1117] border-t border-white/10 z-20">
+        <div className="px-4 py-4 flex items-center gap-2 max-w-xl mx-auto">
+          <div className="flex-1 flex items-center bg-[#1e2433] rounded-full px-4 h-11 gap-2 border border-white/5">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Nhập tin nhắn..."
+              maxLength={80}
+              className="flex-1 bg-transparent text-white text-sm placeholder-gray-500 outline-none"
+            />
+          </div>
           <button
             onClick={sendMessage}
             disabled={!input.trim()}
-            className="text-gray-400 hover:text-white disabled:opacity-30 transition-colors"
+            className={`w-11 h-11 rounded-full shrink-0 flex items-center justify-center border-2 transition-all active:scale-90 ${
+              input.trim()
+                ? 'bg-[#e91e8c] border-[#e91e8c] shadow-lg shadow-[#e91e8c]/20'
+                : 'bg-transparent border-white/10 opacity-30 cursor-not-allowed'
+            }`}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
         </div>
-
-        <button
-          onClick={() => setLiked(l => !l)}
-          className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all active:scale-90 ${
-            liked
-              ? 'bg-[#e91e8c] border-[#e91e8c]'
-              : 'bg-transparent border-[#e91e8c]'
-          }`}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill={liked ? 'white' : 'none'} stroke={liked ? 'white' : '#e91e8c'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </button>
       </div>
     </div>
   );

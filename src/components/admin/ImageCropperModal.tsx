@@ -80,7 +80,7 @@ export default function ImageCropperModal({ image, onCropComplete, onCancel }: I
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-8">
+    <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 p-4 md:p-8 space-y-0">
       <div className="relative w-full max-w-4xl h-[80vh] bg-[#1a1b2e] rounded-3xl overflow-hidden flex flex-col border border-white/10">
         {/* Header */}
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
