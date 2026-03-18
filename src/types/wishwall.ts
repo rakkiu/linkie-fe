@@ -18,6 +18,7 @@ export interface WishwallPendingMessage {
 // Payload of SignalR "NewPendingMessage" event (sent to staff)
 export interface WishwallStaffPending {
   id: string;
+  userName: string;
   message: string;
   sentiment: string;
   createdAt: string;

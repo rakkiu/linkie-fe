@@ -108,9 +108,9 @@ export default function AdminCreateEventPage() {
     } catch (error: unknown) {
       const status = (error as { response?: { status?: number } })?.response?.status;
       if (status === 401) {
-        showToast('error', 'Session expired. Please log in again.');
+        showToast('error', 'Phiên làm việc hết hạn. Vui lòng đăng nhập lại.');
       } else {
-        showToast('error', 'Something went wrong. Please try again.');
+        showToast('error', 'Có lỗi xảy ra. Vui lòng thử lại.');
       }
     } finally {
       setLoading(false);
@@ -158,7 +158,7 @@ export default function AdminCreateEventPage() {
 
       <div style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '100px' }}>
         <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 800, letterSpacing: '1px', marginBottom: '32px' }}>
-          CREATE NEW EVENT
+          TẠO SỰ KIỆN MỚI
         </h1>
 
         <form onSubmit={handleSubmit} style={{
@@ -176,44 +176,44 @@ export default function AdminCreateEventPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div>
-                  <label style={labelStyle}>EVENT NAME</label>
-                  <input required placeholder="e.g. Night Festival 2026" style={inputStyle} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                  <label style={labelStyle}>TÊN SỰ KIỆN</label>
+                  <input required placeholder="VD: Lễ hội Ánh sáng 2026" style={inputStyle} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                 </div>
                 <div>
-                  <label style={labelStyle}>PUBLISH STATUS</label>
+                  <label style={labelStyle}>TRẠNG THÁI</label>
                   <select style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
-                    <option value="Upcoming">Upcoming</option>
-                    <option value="Ongoing">Ongoing</option>
-                    <option value="Finished">Finished</option>
+                    <option value="Upcoming">Sắp diễn ra</option>
+                    <option value="Ongoing">Đang diễn ra</option>
+                    <option value="Finished">Đã kết thúc</option>
                   </select>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div>
-                  <label style={labelStyle}>START DATE</label>
+                  <label style={labelStyle}>NGÀY BẮT ĐẦU</label>
                   <input type="date" required style={inputStyle} className="date-icon-white" min={minDateTime.split('T')[0]} value={formData.startTime.split('T')[0]} onChange={e => setFormData({ ...formData, startTime: e.target.value + 'T00:00' })} />
                 </div>
                 <div>
-                  <label style={labelStyle}>END DATE</label>
+                  <label style={labelStyle}>NGÀY KẾT THÚC</label>
                   <input type="date" required style={inputStyle} className="date-icon-white" min={formData.startTime ? formData.startTime.split('T')[0] : minDateTime.split('T')[0]} value={formData.endTime.split('T')[0]} onChange={e => setFormData({ ...formData, endTime: e.target.value + 'T23:59' })} />
                 </div>
               </div>
 
               <div>
-                <label style={labelStyle}>LOCATION</label>
-                <input placeholder="e.g. My Dinh Stadium, Hanoi" style={inputStyle} value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                <label style={labelStyle}>ĐỊA ĐIỂM</label>
+                <input placeholder="VD: Sân vận động Mỹ Đình, Hà Nội" style={inputStyle} value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
               </div>
 
               <div>
-                <label style={labelStyle}>DESCRIPTION</label>
-                <textarea rows={4} placeholder="Brief description..." style={{ ...inputStyle, resize: 'none' }} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                <label style={labelStyle}>MÔ TẢ</label>
+                <textarea rows={4} placeholder="Mô tả ngắn gọn về sự kiện..." style={{ ...inputStyle, resize: 'none' }} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
               </div>
             </div>
 
             {/* Right: Thumbnail */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={labelStyle}>THUMBNAIL IMAGE</label>
+              <label style={labelStyle}>ẢNH BÌA SỰ KIỆN</label>
               <div
                 onClick={() => fileInputRef.current?.click()}
                 style={{
@@ -232,7 +232,7 @@ export default function AdminCreateEventPage() {
                 ) : (
                   <div style={{ textAlign: 'center', color: '#555' }}>
                     <div style={{ fontSize: '40px', marginBottom: '12px' }}>🖼️</div>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#888' }}>CHỌN ẢNH THUMBNAIL</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#888' }}>CHỌN ẢNH BÌA</div>
                     <div style={{ fontSize: '11px', marginTop: '6px', color: '#444' }}>PNG, JPG, WEBP (16:9)</div>
                   </div>
                 )}
@@ -247,7 +247,7 @@ export default function AdminCreateEventPage() {
           {/* Max Participants + Wishwall */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
             <div>
-              <label style={labelStyle}>MAX PARTICIPANTS</label>
+              <label style={labelStyle}>SỐ LƯỢNG TỐI ĐA</label>
               <input
                 type="number"
                 min={1}
@@ -258,7 +258,7 @@ export default function AdminCreateEventPage() {
             </div>
 
             <div>
-              <label style={labelStyle}>WISHWALL ENABLED</label>
+              <label style={labelStyle}>KÍCH HOẠT WISHWALL</label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', marginTop: '12px' }}>
                 <input
                   type="checkbox"
@@ -266,7 +266,7 @@ export default function AdminCreateEventPage() {
                   onChange={(e) => setFormData({ ...formData, isWishwallEnabled: e.target.checked })}
                   style={{ accentColor: '#00e676', width: '20px', height: '20px' }}
                 />
-                <span style={{ color: 'white', fontSize: '14px', fontWeight: 600 }}>Allow fans to post wishes</span>
+                <span style={{ color: 'white', fontSize: '14px', fontWeight: 600 }}>Cho phép người tham gia gửi lời chúc</span>
               </label>
             </div>
           </div>
@@ -276,13 +276,13 @@ export default function AdminCreateEventPage() {
           {/* AR Frames Section */}
           <div>
             <h2 style={{ color: '#00e5ff', fontSize: '18px', fontWeight: 800, marginBottom: '24px', letterSpacing: '1px' }}>
-              AR FRAMES MANAGEMENT
+              QUẢN LÝ AR FRAMES
             </h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '40px' }}>
               {/* Form Upload */}
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '24px', borderRadius: '12px' }}>
-                <p style={labelStyle}>ADD FRAME (WILL CREATE WITH EVENT)</p>
+                <p style={labelStyle}>THÊM KHUNG HÌNH (SẼ TẠO CÙNG SỰ KIỆN)</p>
                 
                 {newFramePreview && (
                   <div style={{ width: 'fit-content', minWidth: '100px', maxWidth: '100%', height: '160px', borderRadius: '10px', marginBottom: '16px', overflow: 'hidden', border: '1px solid rgba(0, 229, 255, 0.3)', cursor: 'pointer', margin: '0 auto', backgroundSize: '10px 10px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000' }} onClick={() => setPreviewImage(newFramePreview)}>
@@ -292,7 +292,7 @@ export default function AdminCreateEventPage() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <input
-                    placeholder="Frame name (e.g. New Year Frame)..."
+                    placeholder="Tên khung hình (VD: Khung hình năm mới)..."
                     style={inputStyle}
                     value={newFrameName}
                     onChange={e => setNewFrameName(e.target.value)}
@@ -323,14 +323,14 @@ export default function AdminCreateEventPage() {
                       border: '1px solid rgba(0, 229, 255, 0.2)'
                     }}
                   >
-                    ADD TO QUEUE
+                    THÊM VÀO HÀNG ĐỢI
                   </button>
                 </div>
               </div>
 
               {/* List */}
               <div>
-                <p style={{ ...labelStyle, marginBottom: '16px' }}>QUEUED FRAMES ({stagedFrames.length})</p>
+                <p style={{ ...labelStyle, marginBottom: '16px' }}>CÁC KHUNG HÌNH CHỜ ({stagedFrames.length})</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {stagedFrames.map(frame => (
                     <div key={frame.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -351,7 +351,7 @@ export default function AdminCreateEventPage() {
                       </button>
                     </div>
                   ))}
-                  {stagedFrames.length === 0 && <div style={{ fontSize: '12px', color: '#7ecfff', fontStyle: 'italic' }}>Click "Add to Queue" to stage frames before saving.</div>}
+                  {stagedFrames.length === 0 && <div style={{ fontSize: '12px', color: '#7ecfff', fontStyle: 'italic' }}>Nhấn "Thêm vào hàng đợi" để chuẩn bị khung hình.</div>}
                 </div>
               </div>
             </div>
@@ -370,7 +370,7 @@ export default function AdminCreateEventPage() {
                 color: 'white', fontWeight: 700, fontSize: '14px', letterSpacing: '1px', cursor: 'pointer',
               }}
             >
-              CANCEL
+              HỦY
             </button>
             <button
               type="submit"
@@ -384,7 +384,7 @@ export default function AdminCreateEventPage() {
                 transition: 'all 0.2s',
               }}
             >
-              {loading ? 'CREATING...' : 'CREATE EVENT'}
+              {loading ? 'ĐANG TẠO...' : 'TẠO SỰ KIỆN'}
             </button>
           </div>
         </form>
@@ -396,7 +396,7 @@ export default function AdminCreateEventPage() {
             {/* Checkerboard background for transparency visibility */}
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundSize: '16px 16px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000', borderRadius: '12px', zIndex: -1 }}></div>
             <img src={previewImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', boxShadow: '0 0 80px rgba(0,0,0,0.8)', border: '2px solid rgba(255,255,255,0.15)', borderRadius: '12px' }} />
-            <div style={{ position: 'absolute', bottom: '-40px', color: 'rgba(0,229,255,0.5)', fontSize: '11px', fontWeight: 700, letterSpacing: '2px' }}>AR FRAME PREVIEW MODE</div>
+            <div style={{ position: 'absolute', bottom: '-40px', color: 'rgba(0,229,255,0.5)', fontSize: '11px', fontWeight: 700, letterSpacing: '2px' }}>BẢN XEM TRƯỚC AR FRAME</div>
           </div>
           <div style={{ position: 'absolute', top: '30px', right: '40px', color: 'white', fontSize: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>✕</div>
         </div>

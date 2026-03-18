@@ -66,9 +66,9 @@ export default function AdminEventsListPage() {
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 401) {
-        setError('Session expired. Please log in again.');
+        setError('Phiên làm việc hết hạn. Vui lòng đăng nhập lại.');
       } else {
-        setError('Failed to load events. Make sure the backend is running.');
+        setError('Tải danh sách sự kiện thất bại. Vui lòng kiểm tra máy chủ.');
       }
     } finally {
       setLoading(false);
@@ -163,17 +163,17 @@ export default function AdminEventsListPage() {
       await adminEventService.toggleFrameStatus(frameId);
       if (editingId) fetchFrames(editingId);
     } catch (err) {
-      showToast('error', 'Failed to toggle frame status.');
+      showToast('error', 'Thao tác thất bại.');
     }
   };
 
   const handleDeleteFrame = async (frameId: string, name: string) => {
-    if (!window.confirm(`Permanently delete frame "${name}"?`)) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa AR Frame "${name}"?`)) return;
     try {
       await adminEventService.deleteFrame(frameId);
       if (editingId) fetchFrames(editingId);
     } catch (err) {
-      showToast('error', 'Failed to delete frame.');
+      showToast('error', 'Xóa thất bại.');
     }
   };
 
@@ -199,15 +199,15 @@ export default function AdminEventsListPage() {
     setEditLoading(true);
     try {
       await adminEventService.updateEvent(editingId, editFormData, editThumbnailFile);
-      showToast('success', 'Event updated successfully!');
+      showToast('success', 'Cập nhật sự kiện thành công!');
       closeEditModal();
       fetchEvents();
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 401) {
-        showToast('error', 'Session expired. Please log in again.');
+        showToast('error', 'Phiên làm việc hết hạn. Vui lòng đăng nhập lại.');
       } else {
-        showToast('error', 'Update failed. Please try again.');
+        showToast('error', 'Cập nhật thất bại. Vui lòng thử lại.');
       }
     } finally {
       setEditLoading(false);
@@ -292,7 +292,7 @@ export default function AdminEventsListPage() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
-        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 800, letterSpacing: '1px' }}>{isStaff ? 'ONGOING EVENTS' : 'EVENT MANAGEMENT'}</h1>
+        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 800, letterSpacing: '1px' }}>{isStaff ? 'SỰ KIỆN ĐANG DIỄN RA' : 'QUẢN LÝ SỰ KIỆN'}</h1>
         <div style={{ display: 'flex', gap: '12px' }}>
           {/* Filter Status */}
           {!isStaff && (
@@ -301,10 +301,10 @@ export default function AdminEventsListPage() {
               onChange={e => setFilterStatus(e.target.value)}
               style={{ ...inputStyle, width: 'auto', padding: '8px 16px', background: 'rgba(255,255,255,0.06)' }}
             >
-              <option value="All">All Status</option>
-              <option value="Upcoming">Upcoming</option>
-              <option value="Ongoing">Ongoing</option>
-              <option value="Finished">Finished</option>
+              <option value="All">Tất cả trạng thái</option>
+              <option value="Upcoming">Sắp diễn ra</option>
+              <option value="Ongoing">Đang diễn ra</option>
+              <option value="Finished">Đã kết thúc</option>
             </select>
           )}
 
@@ -314,10 +314,10 @@ export default function AdminEventsListPage() {
             onChange={e => setSortBy(e.target.value)}
             style={{ ...inputStyle, width: 'auto', padding: '8px 16px', background: 'rgba(255,255,255,0.06)' }}
           >
-            <option value="time-desc">Time: Newest</option>
-            <option value="time-asc">Time: Oldest</option>
-            <option value="pax-desc">Pax: Highest</option>
-            <option value="pax-asc">Pax: Lowest</option>
+            <option value="time-desc">Thời gian: Mới nhất</option>
+            <option value="time-asc">Thời gian: Cũ nhất</option>
+            <option value="pax-desc">Khán giả: Cao nhất</option>
+            <option value="pax-asc">Khán giả: Thấp nhất</option>
           </select>
 
           {!isStaff && (
@@ -328,7 +328,7 @@ export default function AdminEventsListPage() {
                 color: 'white', fontWeight: 700, fontSize: '13px', letterSpacing: '1px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(233,30,140,0.3)',
               }}
             >
-              + CREATE EVENT
+              + TẠO SỰ KIỆN
             </button>
           )}
         </div>
@@ -337,7 +337,7 @@ export default function AdminEventsListPage() {
       {loading && (
         <div style={{ textAlign: 'center', padding: '60px', color: '#666' }}>
           <div style={{ fontSize: '32px', marginBottom: '12px', animation: 'spin 1s linear infinite', display: 'inline-block' }}>⟳</div>
-          <div style={{ color: '#00e5ff' }}>Loading events...</div>
+          <div style={{ color: '#00e5ff' }}>Đang tải sự kiện...</div>
         </div>
       )}
 
@@ -345,7 +345,7 @@ export default function AdminEventsListPage() {
         <div style={{ background: 'rgba(229,57,53,0.1)', border: '1px solid rgba(229,57,53,0.4)', borderRadius: '10px', padding: '24px', textAlign: 'center', color: '#ef9a9a' }}>
           <div style={{ fontSize: '24px', marginBottom: '8px' }}>⚠️</div>
           <div>{error}</div>
-          <button onClick={fetchEvents} style={{ marginTop: '16px', padding: '8px 24px', borderRadius: '6px', border: '1px solid rgba(229,57,53,0.5)', background: 'transparent', color: '#ef9a9a', cursor: 'pointer', fontSize: '13px' }}> Retry </button>
+          <button onClick={fetchEvents} style={{ marginTop: '16px', padding: '8px 24px', borderRadius: '6px', border: '1px solid rgba(229,57,53,0.5)', background: 'transparent', color: '#ef9a9a', cursor: 'pointer', fontSize: '13px' }}> Thử lại </button>
         </div>
       )}
 
@@ -354,8 +354,8 @@ export default function AdminEventsListPage() {
           {filteredEvents.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '80px', color: '#555', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '12px' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-              <div style={{ fontSize: '16px', marginBottom: '8px', color: '#888' }}>{filterStatus === 'All' ? 'No events yet' : `No ${filterStatus} events found`}</div>
-              <div style={{ fontSize: '13px', color: '#555' }}>Try changing your filters or create a new event</div>
+              <div style={{ fontSize: '16px', marginBottom: '8px', color: '#888' }}>{filterStatus === 'All' ? 'Chưa có sự kiện nào' : `Không tìm thấy sự kiện ${filterStatus}`}</div>
+              <div style={{ fontSize: '13px', color: '#555' }}>Thử thay đổi bộ lọc hoặc tạo sự kiện mới</div>
             </div>
           ) : (
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', overflow: 'hidden' }}>
@@ -363,13 +363,13 @@ export default function AdminEventsListPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                      <th style={headStyle}>THUMBNAIL</th>
-                      <th style={headStyle}>EVENT NAME</th>
-                      <th style={headStyle}>STATUS</th>
-                      <th style={headStyle}>START TIME</th>
-                      <th style={headStyle}>MAX PAX</th>
+                      <th style={headStyle}>ẢNH BÌA</th>
+                      <th style={headStyle}>TÊN SỰ KIỆN</th>
+                      <th style={headStyle}>TRẠNG THÁI</th>
+                      <th style={headStyle}>BẮT ĐẦU</th>
+                      <th style={headStyle}>TỐI ĐA</th>
                       <th style={headStyle}>WISHWALL</th>
-                      <th style={{ ...headStyle, textAlign: 'center' }}>ACTIONS</th>
+                      <th style={{ ...headStyle, textAlign: 'center' }}>THAO TÁC</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -409,7 +409,7 @@ export default function AdminEventsListPage() {
                         </td>
                         <td style={cellStyle}>{formatDateTime(event.startTime)}</td>
                         <td style={cellStyle}>{event.maxParticipants}</td>
-                        <td style={cellStyle}>{event.isWishwallEnabled ? 'ON' : 'OFF'}</td>
+                        <td style={cellStyle}>{event.isWishwallEnabled ? 'BẬT' : 'TẮT'}</td>
                         <td style={{ ...cellStyle, textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                             {!isStaff && (
@@ -418,7 +418,7 @@ export default function AdminEventsListPage() {
                                 onClick={(e) => handleDelete(e, event.id, event.name)}
                                 style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid rgba(229,57,53,0.5)', background: 'rgba(229,57,53,0.1)', color: '#ef9a9a', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                               >
-                                Delete
+                                Xóa
                               </button>
                             )}
                           </div>
@@ -461,59 +461,59 @@ export default function AdminEventsListPage() {
                 <form id="edit-event-form" onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label style={labelStyle}>EVENT NAME</label>
+                      <label style={labelStyle}>TÊN SỰ KIỆN</label>
                       <input required value={editFormData.name} onChange={e => setEditFormData({ ...editFormData, name: e.target.value })} style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>STATUS</label>
+                      <label style={labelStyle}>TRẠNG THÁI</label>
                       <select style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }} value={editFormData.status} onChange={e => setEditFormData({ ...editFormData, status: e.target.value as any })}>
-                        <option value="Upcoming">Upcoming</option>
-                        <option value="Ongoing">Ongoing (Live)</option>
-                        <option value="Finished">Finished</option>
+                        <option value="Upcoming">Sắp diễn ra</option>
+                        <option value="Ongoing">Đang diễn ra (Live)</option>
+                        <option value="Finished">Đã kết thúc</option>
                       </select>
                     </div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label style={labelStyle}>START DATE</label>
+                      <label style={labelStyle}>NGÀY BẮT ĐẦU</label>
                       <input type="date" className="date-icon-white" required value={editFormData.startTime} onChange={e => setEditFormData({ ...editFormData, startTime: e.target.value })} style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>END DATE</label>
+                      <label style={labelStyle}>NGÀY KẾT THÚC</label>
                       <input type="date" className="date-icon-white" required value={editFormData.endTime} onChange={e => setEditFormData({ ...editFormData, endTime: e.target.value })} style={inputStyle} />
                     </div>
                   </div>
 
                   <div>
-                    <label style={labelStyle}>LOCATION</label>
+                    <label style={labelStyle}>ĐỊA ĐIỂM</label>
                     <input value={editFormData.location} onChange={e => setEditFormData({ ...editFormData, location: e.target.value })} style={inputStyle} />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label style={labelStyle}>MAX PAX</label>
+                      <label style={labelStyle}>SỐ LƯỢNG TỐI ĐA</label>
                       <input type="number" min={1} value={editFormData.maxParticipants} onChange={e => setEditFormData({ ...editFormData, maxParticipants: Number(e.target.value) })} style={inputStyle} />
                     </div>
                     <div style={{ alignSelf: 'center', marginTop: '16px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
                         <input type="checkbox" checked={editFormData.isWishwallEnabled} onChange={e => setEditFormData({ ...editFormData, isWishwallEnabled: e.target.checked })} style={{ accentColor: '#00e676', width: '18px', height: '18px' }} />
-                        <span style={{ fontSize: '14px', fontWeight: 600 }}>Enable Wishwall</span>
+                        <span style={{ fontSize: '14px', fontWeight: 600 }}>Bật Wishwall</span>
                       </label>
                     </div>
                   </div>
                   
                   <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '20px' }}>
-                    <button type="button" onClick={closeEditModal} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#999', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}> CANCEL </button>
-                    <button type="submit" form="edit-event-form" disabled={editLoading} style={{ flex: 1.5, padding: '10px', borderRadius: '8px', border: 'none', background: editLoading ? '#333' : 'linear-gradient(135deg, #00e5ff, #00b0ff)', color: 'white', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 16px rgba(0, 176, 255, 0.2)', fontSize: '13px' }}> {editLoading ? 'SAVING...' : 'SAVE CHANGES'} </button>
+                    <button type="button" onClick={closeEditModal} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#999', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}> HỦY </button>
+                    <button type="submit" form="edit-event-form" disabled={editLoading} style={{ flex: 1.5, padding: '10px', borderRadius: '8px', border: 'none', background: editLoading ? '#333' : 'linear-gradient(135deg, #00e5ff, #00b0ff)', color: 'white', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 16px rgba(0, 176, 255, 0.2)', fontSize: '13px' }}> {editLoading ? 'ĐANG LƯU...' : 'LƯU THAY ĐỔI'} </button>
                   </div>
                 </form>
 
                 {/* 2nd Column: Thumbnail */}
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label style={labelStyle}>THUMBNAIL IMAGE</label>
+                  <label style={labelStyle}>ẢNH BÌA SỰ KIỆN</label>
                   <div onClick={() => fileInputRef.current?.click()} style={{ width: '100%', height: '240px', borderRadius: '12px', border: '2px dashed rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}>
-                    {editThumbnailPreview ? <img src={editThumbnailPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ textAlign: 'center', color: '#00e5ff' }}> <div style={{ fontSize: '32px' }}>🖼️</div> <div style={{ fontSize: '12px', fontWeight: 600 }}>Click to change thumbnail</div> </div>}
+                    {editThumbnailPreview ? <img src={editThumbnailPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ textAlign: 'center', color: '#00e5ff' }}> <div style={{ fontSize: '32px' }}>🖼️</div> <div style={{ fontSize: '12px', fontWeight: 600 }}>Nhấn để đổi ảnh bìa</div> </div>}
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleEditFileChange} />
                   {editThumbnailFile && <div style={{ color: '#00e676', fontSize: '11px', marginTop: '8px', fontWeight: 600 }}>✓ {editThumbnailFile.name}</div>}
@@ -521,10 +521,10 @@ export default function AdminEventsListPage() {
 
                 {/* Right Side: AR Frames Section */}
                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '32px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '1px', color: '#00e5ff', marginBottom: '24px' }}> AR FRAMES MANAGEMENT </h3>
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '1px', color: '#00e5ff', marginBottom: '24px' }}> QUẢN LÝ AR FRAMES </h3>
 
                   <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#00e5ff', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>ADD NEW FRAME</p>
+                    <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#00e5ff', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>THÊM KHUNG HÌNH MỚI</p>
                     
                     {newFramePreview && (
                       <div style={{ width: 'fit-content', minWidth: '100px', maxWidth: '100%', height: '140px', background: '#000', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden', border: '1px solid rgba(0, 229, 255, 0.3)', cursor: 'pointer', margin: '0 auto', backgroundSize: '10px 10px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)' }} onClick={() => setPreviewImage(newFramePreview)}>
@@ -532,7 +532,7 @@ export default function AdminEventsListPage() {
                       </div>
                     )}
 
-                    <input placeholder="Frame name..." value={newFrameName} onChange={e => setNewFrameName(e.target.value)} style={{ ...inputStyle, marginBottom: '10px', background: 'rgba(0,0,0,0.3)', padding: '8px 12px' }} />
+                    <input placeholder="Tên khung hình..." value={newFrameName} onChange={e => setNewFrameName(e.target.value)} style={{ ...inputStyle, marginBottom: '10px', background: 'rgba(0,0,0,0.3)', padding: '8px 12px' }} />
                     <div style={{ marginBottom: '12px' }}> 
                       <input 
                         type="file" 
@@ -549,12 +549,12 @@ export default function AdminEventsListPage() {
                         style={{ fontSize: '11px', color: '#888' }} 
                       /> 
                     </div>
-                    <button onClick={handleAddFrame} disabled={!newFrameName || !newFrameFile} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: (!newFrameName || !newFrameFile) ? '#333' : 'rgba(0, 229, 255, 0.15)', color: (!newFrameName || !newFrameFile) ? '#666' : '#00e5ff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', border: '1px solid rgba(0, 229, 255, 0.2)' }}> UPLOAD FRAME </button>
+                    <button onClick={handleAddFrame} disabled={!newFrameName || !newFrameFile} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: (!newFrameName || !newFrameFile) ? '#333' : 'rgba(0, 229, 255, 0.15)', color: (!newFrameName || !newFrameFile) ? '#666' : '#00e5ff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', border: '1px solid rgba(0, 229, 255, 0.2)' }}> TẢI LÊN KHUNG HÌNH </button>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#00e5ff', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>FRAMES ({frames.length})</p>
-                    {loadingFrames && <div style={{ fontSize: '12px', color: '#00e5ff' }}>Loading frames...</div>}
+                    <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#00e5ff', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>AR FRAME ({frames.length})</p>
+                    {loadingFrames && <div style={{ fontSize: '12px', color: '#00e5ff' }}>Đang tải...</div>}
                     {frames.map(frame => (
                       <div key={frame.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
                         <div style={{ width: '50px', height: '50px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', backgroundSize: '8px 8px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000', border: '1px solid rgba(255,255,255,0.05)' }} onClick={() => setPreviewImage(frame.assetUrl)}>
@@ -567,13 +567,13 @@ export default function AdminEventsListPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div onClick={() => handleToggleFrame(frame.id)} style={{ width: '50px', height: '24px', background: frame.isActive ? 'rgba(0, 230, 118, 0.2)' : 'rgba(255, 255, 255, 0.05)', borderRadius: '20px', padding: '2px', cursor: 'pointer', position: 'relative', border: `1px solid ${frame.isActive ? '#00e676' : 'rgba(255,255,255,0.1)'}`, transition: 'all 0.3s ease' }}>
                             <div style={{ position: 'absolute', left: frame.isActive ? '28px' : '2px', top: '2px', width: '18px', height: '18px', borderRadius: '50%', background: frame.isActive ? '#00e676' : '#666', transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)', boxShadow: frame.isActive ? '0 0 10px rgba(0,230,118,0.5)' : 'none' }} />
-                            <span style={{ position: 'absolute', right: frame.isActive ? 'auto' : '6px', left: frame.isActive ? '6px' : 'auto', fontSize: '8px', fontWeight: 900, color: frame.isActive ? '#00e676' : '#666', lineHeight: '20px', textTransform: 'uppercase' }}> {frame.isActive ? 'ON' : 'OFF'} </span>
+                            <span style={{ position: 'absolute', right: frame.isActive ? 'auto' : '6px', left: frame.isActive ? '6px' : 'auto', fontSize: '8px', fontWeight: 900, color: frame.isActive ? '#00e676' : '#666', lineHeight: '20px', textTransform: 'uppercase' }}> {frame.isActive ? 'BẬT' : 'TẮT'} </span>
                           </div>
                           <button onClick={() => handleDeleteFrame(frame.id, frame.name)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#666' }}> 🗑️ </button>
                         </div>
                       </div>
                     ))}
-                    {!loadingFrames && frames.length === 0 && <div style={{ fontSize: '12px', color: '#555', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>No frames yet. Upload a PNG frame above.</div>}
+                    {!loadingFrames && frames.length === 0 && <div style={{ fontSize: '12px', color: '#555', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Chưa có khung hình nào. Hãy tải lên file PNG ở trên.</div>}
                   </div>
                 </div>
               </div>
@@ -588,7 +588,7 @@ export default function AdminEventsListPage() {
             {/* Checkerboard background for transparency visibility */}
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundSize: '20px 20px', backgroundImage: 'linear-gradient(45deg, #1a1a1a 25%, transparent 25%), linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1a1a 75%), linear-gradient(-45deg, transparent 75%, #1a1a1a 75%)', backgroundColor: '#000', borderRadius: '12px', zIndex: -1 }}></div>
             <img src={previewImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', boxShadow: '0 0 80px rgba(0,0,0,0.8)', border: '2px solid rgba(255,255,255,0.15)', borderRadius: '12px' }} />
-            <div style={{ position: 'absolute', bottom: '-40px', color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>AR FRAME PREVIEW (TRANSPARENCY GUIDES ACTIVE)</div>
+            <div style={{ position: 'absolute', bottom: '-40px', color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>XEM TRƯỚC AR FRAME</div>
           </div>
           <div style={{ position: 'absolute', top: '30px', right: '40px', color: 'white', fontSize: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', transition: 'all 0.2s' }}>✕</div>
         </div>
