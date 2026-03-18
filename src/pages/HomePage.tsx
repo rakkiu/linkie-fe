@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
@@ -123,11 +123,14 @@ export default function HomePage() {
 
       {/* ── WishWall Feature Banner ───────────────────── */}
       <section className="px-5 pb-2">
-        <div className="relative overflow-hidden rounded-3xl border border-[#00bcd4]/25">
+        <Link 
+          to="/events"
+          className="relative block overflow-hidden rounded-3xl border border-[#00bcd4]/25 hover:border-[#00bcd4]/50 transition-all active:scale-[0.98] cursor-pointer group"
+        >
           <img
             src={bannerWishwall}
             alt="WishWall"
-            className="w-full h-72 object-cover"
+            className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
           <div className="absolute inset-0 p-5 flex flex-col justify-end">
@@ -146,16 +149,19 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-        </div>
+        </Link>
       </section>
 
       {/* ── Camera Frame Feature Banner ───────────────── */}
       <section className="px-5 pb-2">
-        <div className="relative overflow-hidden rounded-3xl border border-[#00bcd4]/25">
+        <Link 
+          to="/events"
+          className="relative block overflow-hidden rounded-3xl border border-[#00bcd4]/25 hover:border-[#00bcd4]/50 transition-all active:scale-[0.98] cursor-pointer group"
+        >
           <img
             src={bannerCameraFrame}
             alt="Camera Frame"
-            className="w-full h-72 object-cover"
+            className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
 
@@ -178,7 +184,7 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-        </div>
+        </Link>
       </section>
 
       {/* ── Events ───────────────────────────────────── */}
