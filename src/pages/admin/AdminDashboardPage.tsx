@@ -64,6 +64,11 @@ export default function AdminDashboardPage() {
     usage: f.usageCount
   })) || [];
 
+  const aiSummary = summary?.aiSummary;
+  const aiFallbackRate = aiSummary && aiSummary.total > 0
+    ? (aiSummary.fallback / aiSummary.total) * 100
+    : 0;
+
   const cardStyle: React.CSSProperties = {
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.1)',
@@ -257,6 +262,43 @@ export default function AdminDashboardPage() {
                 ))}
                 {!summary?.recentLiveMessages.length && <div style={{ color: '#444', fontSize: '12px', textAlign: 'center', padding: '20px' }}>Chưa có tin nhắn trực tiếp nào.</div>}
               </div>
+            </div>
+          </div>
+
+          {/* AI Moderation Summary */}
+          <div style={{ ...cardStyle, marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ color: '#ccc', fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>AI LỌC NỘI DUNG</div>
+              <div style={{ color: '#888', fontSize: '11px' }}>
+                Fallback: {aiSummary?.fallback ?? 0} ({aiFallbackRate.toFixed(1)}%)
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px' }}>
+                <div style={{ color: '#aaa', fontSize: '10px', fontWeight: 700 }}>TỔNG</div>
+                <div style={{ color: '#fff', fontSize: '20px', fontWeight: 800 }}>{aiSummary?.total ?? 0}</div>
+              </div>
+              <div style={{ background: 'rgba(0,230,118,0.08)', border: '1px solid rgba(0,230,118,0.25)', borderRadius: '8px', padding: '10px' }}>
+                <div style={{ color: '#00e676', fontSize: '10px', fontWeight: 700 }}>ALLOW</div>
+                <div style={{ color: '#00e676', fontSize: '20px', fontWeight: 800 }}>{aiSummary?.allow ?? 0}</div>
+              </div>
+              <div style={{ background: 'rgba(255,193,7,0.08)', border: '1px solid rgba(255,193,7,0.25)', borderRadius: '8px', padding: '10px' }}>
+                <div style={{ color: '#ffc107', fontSize: '10px', fontWeight: 700 }}>REVIEW</div>
+                <div style={{ color: '#ffc107', fontSize: '20px', fontWeight: 800 }}>{aiSummary?.review ?? 0}</div>
+              </div>
+              <div style={{ background: 'rgba(244,67,54,0.08)', border: '1px solid rgba(244,67,54,0.25)', borderRadius: '8px', padding: '10px' }}>
+                <div style={{ color: '#f44336', fontSize: '10px', fontWeight: 700 }}>BLOCK</div>
+                <div style={{ color: '#f44336', fontSize: '20px', fontWeight: 800 }}>{aiSummary?.block ?? 0}</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px' }}>
+                <div style={{ color: '#aaa', fontSize: '10px', fontWeight: 700 }}>AVG MS</div>
+                <div style={{ color: '#fff', fontSize: '20px', fontWeight: 800 }}>{Math.round(aiSummary?.avgDurationMs ?? 0)}</div>
+              </div>
+            </div>
+
+            <div style={{ color: '#666', fontSize: '11px' }}>
+              Tổng lọc AI và tỷ lệ fallback trong phiên hiện tại.
             </div>
           </div>
 

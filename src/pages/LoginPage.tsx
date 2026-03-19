@@ -32,15 +32,19 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      const lowerEmail = email.toLowerCase();
+      
+      // Use the updated role from context storage after login
+      const stored = localStorage.getItem('linkie_user');
+      const userObj = stored ? JSON.parse(stored) : null;
+      const role = userObj?.role;
       
       if (from) {
         navigate(from, { replace: true });
-      } else if (lowerEmail.includes('admin')) {
+      } else if (role === 'admin') {
         navigate('/admin');
-      } else if (lowerEmail.includes('staff')) {
-        navigate('/staff/wishwall');
-      } else if (lowerEmail.includes('led')) {
+      } else if (role === 'staff') {
+        navigate('/admin/events'); 
+      } else if (role === 'led') {
         navigate('/led');
       } else {
         navigate('/');

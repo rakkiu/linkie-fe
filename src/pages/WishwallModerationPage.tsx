@@ -3,13 +3,40 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
 import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
-import type { PendingWishwallMessage, WishwallStaffPending } from '../types/wishwall';
+import type { AiLabel, PendingWishwallMessage, WishwallAiLog, WishwallStaffPending } from '../types/wishwall';
 import { formatToLocalTime } from '../lib/dateUtils';
 
 export default function WishwallModerationPage() {
   const { id: paramEventId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { logout } = useAuth();
+
+  const getAiLabelMeta = (label?: AiLabel | null) => {
+    switch (label) {
+      case 'BLOCK':
+        return { text: 'BLOCK', className: 'border-rose-500/40 text-rose-400 bg-rose-500/10' };
+      case 'REVIEW':
+        return { text: 'REVIEW', className: 'border-amber-400/40 text-amber-300 bg-amber-500/10' };
+      case 'ALLOW':
+        return { text: 'ALLOW', className: 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10' };
+      default:
+        return { text: 'AI N/A', className: 'border-white/20 text-white/40 bg-white/5' };
+    }
+  };
+
+  const sortPendingMessages = (items: PendingWishwallMessage[]) => {
+    const priority = (label?: AiLabel | null) => {
+      if (label === 'BLOCK') return 0;
+      if (label === 'REVIEW') return 1;
+      if (label === 'ALLOW') return 2;
+      return 3;
+    };
+    return [...items].sort((a, b) => {
+      const labelDelta = priority(a.aiLabel) - priority(b.aiLabel);
+      if (labelDelta !== 0) return labelDelta;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+  };
 
   // If navigated via /staff/wishwall, paramEventId is undefined → show picker
   const [selectedEventId, setSelectedEventId] = useState<string | null>(paramEventId ?? null);
@@ -53,6 +80,9 @@ export default function WishwallModerationPage() {
   const [loading, setLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const connRef = useRef<ReturnType<typeof createWishwallConnection> | null>(null);
+  const [activeTab, setActiveTab] = useState<'pending' | 'ai-logs'>('pending');
+  const [aiLogs, setAiLogs] = useState<WishwallAiLog[]>([]);
+  const [aiLogsLoading, setAiLogsLoading] = useState(false);
 
   // ── Load pending messages ──────────────────────────────────────────────────
   const loadPending = useCallback(async () => {
@@ -61,8 +91,7 @@ export default function WishwallModerationPage() {
     try {
       const res = await wishwallApi.getPendingMessages(selectedEventId);
       const data: PendingWishwallMessage[] = (res.data as { data: PendingWishwallMessage[] }).data ?? [];
-      // Sort oldest first
-      const sortedData = [...data].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      const sortedData = sortPendingMessages(data);
       setMessages(sortedData);
     } catch {
       // silently ignore
@@ -74,6 +103,25 @@ export default function WishwallModerationPage() {
   useEffect(() => {
     loadPending();
   }, [loadPending]);
+
+  const loadAiLogs = useCallback(async () => {
+    if (!selectedEventId) return;
+    setAiLogsLoading(true);
+    try {
+      const res = await wishwallApi.getAiLogs(selectedEventId, 200);
+      const data: WishwallAiLog[] = (res.data as { data: WishwallAiLog[] }).data ?? [];
+      setAiLogs(data);
+    } catch {
+      // ignore
+    } finally {
+      setAiLogsLoading(false);
+    }
+  }, [selectedEventId]);
+
+  useEffect(() => {
+    if (activeTab !== 'ai-logs') return;
+    loadAiLogs();
+  }, [activeTab, loadAiLogs]);
 
   // ── SignalR: receive new pending messages in real-time ─────────────────────
   useEffect(() => {
@@ -87,9 +135,10 @@ export default function WishwallModerationPage() {
     });
 
     conn.on('NewPendingMessage', (payload: WishwallStaffPending) => {
+      console.log('SignalR NewPendingMessage received:', payload);
       setMessages(prev => {
         if (prev.some(m => m.id === payload.id)) return prev;
-        return [
+        const next = [
           ...prev,
           {
             id: payload.id,
@@ -98,8 +147,11 @@ export default function WishwallModerationPage() {
             message: payload.message,
             sentiment: payload.sentiment,
             createdAt: payload.createdAt,
+            aiLabel: payload.aiLabel ?? null,
+            aiReason: payload.aiReason ?? null,
           }
         ];
+        return sortPendingMessages(next);
       });
     });
 
@@ -248,8 +300,39 @@ export default function WishwallModerationPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-8 w-full">
-        {loading ? (
+      <div className="max-w-5xl mx-auto px-4 py-8 w-full">
+        <div className="flex items-center gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-colors ${
+              activeTab === 'pending'
+                ? 'border-teal-400/60 text-teal-300 bg-teal-500/10'
+                : 'border-white/10 text-white/40 hover:text-white/70'
+            }`}
+          >
+            Pending
+          </button>
+          <button
+            onClick={() => setActiveTab('ai-logs')}
+            className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-colors ${
+              activeTab === 'ai-logs'
+                ? 'border-amber-400/60 text-amber-300 bg-amber-500/10'
+                : 'border-white/10 text-white/40 hover:text-white/70'
+            }`}
+          >
+            AI Logs
+          </button>
+          {activeTab === 'ai-logs' && (
+            <button
+              onClick={() => loadAiLogs()}
+              className="ml-2 px-3 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/10 text-white/40 hover:text-white/80"
+            >
+              Refresh
+            </button>
+          )}
+        </div>
+        {activeTab === 'pending' ? (
+          loading ? (
           <p className="text-white/30 text-sm text-center mt-20 animate-pulse uppercase tracking-widest">Đang tải tin nhắn…</p>
         ) : messages.length === 0 ? (
           <div className="text-center mt-20 text-white/20">
@@ -258,7 +341,9 @@ export default function WishwallModerationPage() {
           </div>
         ) : (
           <ul className="space-y-4">
-            {messages.map(msg => (
+            {messages.map(msg => {
+              const aiMeta = getAiLabelMeta(msg.aiLabel ?? null);
+              return (
               <li
                 key={msg.id}
                 className="bg-white/5 border border-white/10 rounded-3xl p-6 transition-all shadow-xl backdrop-blur-sm"
@@ -268,6 +353,12 @@ export default function WishwallModerationPage() {
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-sm font-bold text-teal-400/90 uppercase tracking-wider">
                         {msg.userName || 'Ẩn danh'}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${aiMeta.className}`}
+                        title={msg.aiReason ?? ''}
+                      >
+                        {aiMeta.text}
                       </span>
                       <span
                         className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${
@@ -312,8 +403,47 @@ export default function WishwallModerationPage() {
                   </button>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
+        )) : (
+          aiLogsLoading ? (
+            <p className="text-white/30 text-sm text-center mt-20 animate-pulse uppercase tracking-widest">Dang tai AI logs...</p>
+          ) : aiLogs.length === 0 ? (
+            <div className="text-center mt-20 text-white/20">
+              <p className="text-5xl mb-4"></p>
+              <p className="text-lg font-medium">Khong co AI log.</p>
+            </div>
+          ) : (
+            <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+              <div className="grid grid-cols-6 gap-2 px-4 py-3 text-[10px] uppercase tracking-widest text-white/40 border-b border-white/10">
+                <div className="col-span-2">Message</div>
+                <div>Label</div>
+                <div className="col-span-2">Reason</div>
+                <div>Time</div>
+              </div>
+              <div className="max-h-[520px] overflow-y-auto">
+                {aiLogs.map(log => {
+                  const aiMeta = getAiLabelMeta(log.label);
+                  return (
+                    <div key={log.messageId} className="grid grid-cols-6 gap-2 px-4 py-3 text-sm border-b border-white/5">
+                      <div className="col-span-2 text-white/90">{log.message}</div>
+                      <div>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${aiMeta.className}`}>
+                          {aiMeta.text}
+                        </span>
+                        <div className="text-[10px] text-white/40 mt-1">
+                          {log.source} - {Math.round(log.durationMs)}ms
+                        </div>
+                      </div>
+                      <div className="col-span-2 text-white/50 text-xs">{log.reason}</div>
+                      <div className="text-white/40 text-xs">{formatToLocalTime(log.createdAt)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )
         )}
       </div>
     </div>
