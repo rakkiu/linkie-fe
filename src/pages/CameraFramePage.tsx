@@ -168,7 +168,7 @@ export default function CameraFramePage() {
     return (
       <div className="bg-[#0d1117] min-h-screen text-white flex flex-col items-center justify-center">
         <div className="animate-spin text-4xl mb-4 text-[#00e5ff]">⟳</div>
-        <p className="text-gray-400">Đang chuẩn bị camera...</p>
+        <p className="text-gray-400">Đang khởi động Camera AR...</p>
       </div>
     );
   }
@@ -189,7 +189,7 @@ export default function CameraFramePage() {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </div>
-            <span className="text-sm font-bold">Chụp ảnh AR</span>
+            <span className="text-sm font-bold">Camera AR</span>
           </button>
           <span className="text-white/20 text-xs">•</span>
           <p className="text-gray-500 text-[10px] uppercase tracking-widest truncate">{event?.name || 'Sự kiện'}</p>
@@ -270,7 +270,7 @@ export default function CameraFramePage() {
                <div className="w-2 h-2 bg-pink-500 rounded-full" />
              )}
           </div>
-          <span className="text-[8px] font-bold text-white/40 group-hover:text-pink-400">FRAMES</span>
+          <span className="text-[8px] font-bold text-white/40 group-hover:text-pink-400 uppercase tracking-widest">AR FRAME</span>
         </button>
 
         {/* Center: Capture */}
@@ -293,7 +293,7 @@ export default function CameraFramePage() {
             <path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
             <path d="M15 13a3 3 0 0 0-3-3" />
           </svg>
-          <span className="text-[8px] text-white/40 group-hover:text-[#00e5ff]">SWITCH</span>
+          <span className="text-[8px] text-white/40 group-hover:text-[#00e5ff] uppercase tracking-widest">Đổi Camera</span>
         </button>
       </div>
 
@@ -307,8 +307,8 @@ export default function CameraFramePage() {
           <div className="relative w-full max-w-md bg-[#1a1c23] border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-10 duration-300">
             <div className="p-5 border-b border-white/5 flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-lg">Chọn AR Frame</h3>
-                <p className="text-xs text-gray-400">Có {frames.length} khung hình khả dụng</p>
+                <h3 className="font-bold text-lg text-white">Chọn AR Frame</h3>
+                <p className="text-xs text-gray-400">Có {frames.length} mẫu AR Frame</p>
               </div>
               <button 
                 onClick={() => setShowFramePicker(false)}

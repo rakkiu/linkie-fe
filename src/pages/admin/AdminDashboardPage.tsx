@@ -54,9 +54,9 @@ export default function AdminDashboardPage() {
   };
 
   const sentimentData = summary ? [
-    { name: 'Negative', value: summary.sentimentSummary['Negative'] || 0, color: '#ff5252' },
-    { name: 'Neutral', value: summary.sentimentSummary['Neutral'] || 0, color: '#aaa' },
-    { name: 'Positive', value: summary.sentimentSummary['Positive'] || 0, color: '#00e676' },
+    { name: 'Tiêu cực', value: summary.sentimentSummary['Negative'] || 0, color: '#ff5252' },
+    { name: 'Trung lập', value: summary.sentimentSummary['Neutral'] || 0, color: '#aaa' },
+    { name: 'Tích cực', value: summary.sentimentSummary['Positive'] || 0, color: '#00e676' },
   ] : [];
 
   const frameData = summary?.frameUsageStats.map(f => ({
@@ -77,7 +77,7 @@ export default function AdminDashboardPage() {
     <AdminLayout activePage="dashboard">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ color: 'white', fontSize: '22px', fontWeight: 800, letterSpacing: '1px' }}>
-          Real-time Monitoring
+          Giám sát thời gian thực
         </h1>
 
         <select
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00bcd4', display: 'inline-block' }} />
-                <span style={{ color: '#ccc', fontSize: '13px' }}>Live Fan Sentiment (Trend Analysis)</span>
+                <span style={{ color: '#ccc', fontSize: '13px' }}>Cảm xúc Fan trực tiếp (Phân tích xu hướng)</span>
               </div>
               <div style={{ height: '140px', width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -135,16 +135,16 @@ export default function AdminDashboardPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', padding: '0 10px' }}>
                 <div style={{ textAlign: 'center' }}>
-                   <div style={{ color: '#ff5252', fontSize: '12px', fontWeight: 800 }}>Negative: {summary?.sentimentSummary['Negative'] || 0}</div>
-                   <div style={{ color: '#555', fontSize: '9px' }}>Rejected/Sad</div>
+                   <div style={{ color: '#ff5252', fontSize: '12px', fontWeight: 800 }}>Từ chối: {summary?.sentimentSummary['Negative'] || 0}</div>
+                   <div style={{ color: '#555', fontSize: '9px' }}>Bị từ chối/Buồn</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                   <div style={{ color: '#aaa', fontSize: '12px', fontWeight: 800 }}>Neutral: {summary?.sentimentSummary['Neutral'] || 0}</div>
-                   <div style={{ color: '#555', fontSize: '9px' }}>Normal info</div>
+                   <div style={{ color: '#aaa', fontSize: '12px', fontWeight: 800 }}>Bình thường: {summary?.sentimentSummary['Neutral'] || 0}</div>
+                   <div style={{ color: '#555', fontSize: '9px' }}>Thông tin thường</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                   <div style={{ color: '#00e676', fontSize: '12px', fontWeight: 800 }}>Positive: {summary?.sentimentSummary['Positive'] || 0}</div>
-                   <div style={{ color: '#555', fontSize: '9px' }}>Happy/Love</div>
+                   <div style={{ color: '#00e676', fontSize: '12px', fontWeight: 800 }}>Nổi bật: {summary?.sentimentSummary['Positive'] || 0}</div>
+                   <div style={{ color: '#555', fontSize: '9px' }}>Vui vẻ/Yêu thích</div>
                 </div>
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function AdminDashboardPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             {/* Camera Frame Summary - Figma Style */}
             <div style={{...cardStyle, gap: '12px'}}>
-              <div style={{ color: '#ccc', fontSize: '15px', fontWeight: 700, letterSpacing: '1px' }}>CAMERA FRAME</div>
+              <div style={{ color: '#ccc', fontSize: '15px', fontWeight: 700, letterSpacing: '1px' }}>CAMERA AR</div>
               
               <div style={{
                 background: 'rgba(0,188,212,0.1)',
@@ -163,7 +163,7 @@ export default function AdminDashboardPage() {
                 position: 'relative',
                 minHeight: '120px'
               }}>
-                <div style={{ color: '#888', fontSize: '12px', marginBottom: '8px' }}>Active Frames</div>
+                <div style={{ color: '#888', fontSize: '12px', marginBottom: '8px' }}>AR Frame đang hoạt động</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{ color: '#00bcd4', fontSize: '56px', fontWeight: 800, lineHeight: 1 }}>{summary?.activeFramesCount}</div>
                   
@@ -187,7 +187,7 @@ export default function AdminDashboardPage() {
                         </span>
                       </div>
                     ))}
-                    {!summary?.frameUsageStats.length && <div style={{ color: '#444', fontSize: '10px' }}>No active frames.</div>}
+                    {!summary?.frameUsageStats.length && <div style={{ color: '#444', fontSize: '10px' }}>Không có AR Frame nào.</div>}
                   </div>
                 </div>
               </div>
@@ -203,11 +203,11 @@ export default function AdminDashboardPage() {
                 justifyContent: 'space-between'
               }}>
                 <div>
-                   <div style={{ color: '#888', fontSize: '11px', marginBottom: '2px' }}>Total Photos Taken</div>
+                   <div style={{ color: '#888', fontSize: '11px', marginBottom: '2px' }}>Tổng ảnh chụp</div>
                    <div style={{ color: '#e91e8c', fontSize: '32px', fontWeight: 800 }}>{summary?.totalPhotos.toLocaleString() || 0}</div>
                 </div>
                 <div style={{ textAlign: 'right', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '15px' }}>
-                   <div style={{ color: '#888', fontSize: '11px', marginBottom: '2px' }}>Unique Fans</div>
+                   <div style={{ color: '#888', fontSize: '11px', marginBottom: '2px' }}>Fan tham gia</div>
                    <div style={{ color: '#00bcd4', fontSize: '24px', fontWeight: 800 }}>{summary?.totalPhotographers || 0}</div>
                 </div>
               </div>
@@ -215,7 +215,7 @@ export default function AdminDashboardPage() {
 
             {/* Frame Usage Analytics */}
             <div style={cardStyle}>
-              <div style={{ color: '#ccc', fontSize: '13px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>FRAME USAGE (TOTAL)</div>
+              <div style={{ color: '#ccc', fontSize: '13px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>SỬ DỤNG AR FRAME (TỔNG)</div>
               <div style={{ height: '220px', width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={frameData} layout="vertical" margin={{ left: -20, right: 10 }}>
@@ -237,7 +237,7 @@ export default function AdminDashboardPage() {
               <div style={{ color: '#ccc', fontSize: '13px', fontWeight: 700, marginBottom: '8px', letterSpacing: '1px' }}>WISHWALL</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                 <span className="pulse-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#e91e8c', boxShadow: '0 0 6px #e91e8c' }} />
-                <span style={{ color: '#e91e8c', fontSize: '11px', fontWeight: 700 }}>Live LED Stream</span>
+                <span style={{ color: '#e91e8c', fontSize: '11px', fontWeight: 700 }}>Luồng LED trực tiếp</span>
               </div>
 
               <div style={{
@@ -255,7 +255,7 @@ export default function AdminDashboardPage() {
                     <div style={{ textAlign: 'right', color: '#555', fontSize: '8px' }}>{new Date(msg.createdAt).toLocaleTimeString()}</div>
                   </div>
                 ))}
-                {!summary?.recentLiveMessages.length && <div style={{ color: '#444', fontSize: '12px', textAlign: 'center', padding: '20px' }}>No live messages.</div>}
+                {!summary?.recentLiveMessages.length && <div style={{ color: '#444', fontSize: '12px', textAlign: 'center', padding: '20px' }}>Chưa có tin nhắn trực tiếp nào.</div>}
               </div>
             </div>
           </div>
@@ -271,7 +271,7 @@ export default function AdminDashboardPage() {
             justifyContent: 'space-between',
           }}>
             <span style={{ color: 'white', fontWeight: 800, fontSize: '14px', letterSpacing: '1px' }}>
-              TOTAL PARTICIPANTS LOGGED : {summary?.totalParticipants || 0}
+              TỔNG SỐ NGƯỜI THAM GIA ĐÃ GHI NHẬN : {summary?.totalParticipants || 0}
             </span>
             <div style={{ display: 'flex', gap: '16px' }}>
               <button 
@@ -289,7 +289,7 @@ export default function AdminDashboardPage() {
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                 }}
               >
-                EMERGENCY
+                KHẨN CẤP
               </button>
               <button 
                 onClick={() => window.location.href = '/admin/report'}
@@ -306,7 +306,7 @@ export default function AdminDashboardPage() {
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                 }}
               >
-                EXPORT DATA
+                XUẤT DỮ LIỆU
               </button>
             </div>
           </div>

@@ -19,11 +19,11 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
   };
 
   const allNavItems = [
-    { id: 'dashboard', label: 'DASHBOARD', path: '/admin', roles: ['admin'] },
-    { id: 'events', label: 'EVENTS', path: '/admin/events', roles: ['admin', 'staff'] },
-    { id: 'fan-insights', label: 'FAN INSIGHTS', path: '/admin/fan-insights', roles: ['admin'] },
-    { id: 'report', label: 'REPORT', path: '/admin/report', roles: ['admin'] },
-    { id: 'create-event', label: 'CREATE EVENT', path: '/admin/create-event', roles: ['admin'] },
+    { id: 'events', label: 'SỰ KIỆN', path: '/admin/events', roles: ['admin', 'staff'] },
+    { id: 'create-event', label: 'TẠO SỰ KIỆN', path: '/admin/create-event', roles: ['admin'] },
+    { id: 'dashboard', label: 'BẢNG ĐIỀU KHIỂN', path: '/admin', roles: ['admin'] },
+    { id: 'fan-insights', label: 'TÌM HIỂU FAN', path: '/admin/fan-insights', roles: ['admin'] },
+    { id: 'report', label: 'BÁO CÁO', path: '/admin/report', roles: ['admin'] },
   ];
 
   const navItems = allNavItems.filter(item => 
@@ -105,13 +105,13 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
           onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
-          LOG OUT
+          ĐĂNG XUẤT
         </button>
 
         {/* System Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '4px', marginTop: '8px' }}>
-          <span style={{ color: '#aaa', fontSize: '10px', fontWeight: 600 }}>SYSTEM STATUS :</span>
-          <span style={{ color: '#4caf50', fontSize: '10px', fontWeight: 700 }}>ONLINE</span>
+          <span style={{ color: '#aaa', fontSize: '10px', fontWeight: 600 }}>TRẠNG THÁI:</span>
+          <span style={{ color: '#4caf50', fontSize: '10px', fontWeight: 700 }}>TRỰC TUYẾN</span>
           <span style={{
             width: '8px', height: '8px', borderRadius: '50%',
             background: '#4caf50',

@@ -59,7 +59,7 @@ export default function HomePage() {
       <section className="relative h-[65vh] overflow-hidden">
         <img
           src={bannerIntro}
-          alt="Concert"
+          alt="Sự kiện"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a1a] via-black/20 to-black/40" />
@@ -129,15 +129,15 @@ export default function HomePage() {
         >
           <img
             src={bannerWishwall}
-            alt="WishWall"
+            alt="Wishwall"
             className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
           <div className="absolute inset-0 p-5 flex flex-col justify-end">
-            <h3 className="text-4xl font-black text-white mb-1 tracking-wide">WISHWALL</h3>
-            <p className="text-xs text-gray-200 mb-5">Trở thành một phần của bữa tiệc âm nhạc</p>
+            <h3 className="text-4xl font-black text-white mb-1 tracking-wide uppercase">WISHWALL</h3>
+            <p className="text-xs text-gray-200 mb-5">Một phần không thể thiếu của sự kiện</p>
             <div className="flex gap-6">
-              {['Nhập tin nhắn', 'Bấm gửi', 'Hiển thị trên LED'].map((label, i) => (
+              {['Viết lời chúc', 'Gửi đi', 'Hiện trên LED'].map((label, i) => (
                 <div key={label} className="flex flex-col items-center gap-1.5">
                   <div className="w-10 h-10 rounded-full border-[2.5px] border-[#00e5ff] bg-[#00e5ff]/20 flex items-center justify-center">
                     <span className="text-white text-sm font-bold">{i + 1}</span>
@@ -166,13 +166,13 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
 
           <div className="absolute inset-0 p-5 flex flex-col justify-end">
-            <h3 className="text-4xl font-black text-white mb-1 tracking-wide">CAMERA FRAME</h3>
+            <h3 className="text-4xl font-black text-white mb-1 tracking-wide">Camera AR</h3>
             <p className="text-xs text-gray-200 mb-5">
-              Lưu giữ khoảnh khắc cùng Frame độc quyền
+              Lưu giữ khoảnh khắc cùng AR Frame độc quyền
             </p>
 
             <div className="flex gap-6">
-              {['Chọn Frame', 'Chụp ảnh', 'Lưu và chia sẻ'].map((label, i) => (
+              {['Chọn AR Frame', 'Chụp ảnh', 'Lưu & Chia sẻ'].map((label, i) => (
                 <div key={label} className="flex flex-col items-center gap-1.5">
                   <div className="w-10 h-10 rounded-full border-[2.5px] border-[#00e5ff] bg-[#00e5ff]/20 flex items-center justify-center">
                     <span className="text-white text-sm font-bold">{i + 1}</span>

@@ -15,12 +15,25 @@ export default function WishwallModerationPage() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(paramEventId ?? null);
   const [selectedEventName, setSelectedEventName] = useState<string>('');
 
+  useEffect(() => {
+    if (paramEventId) {
+      setSelectedEventId(paramEventId);
+    }
+  }, [paramEventId]);
+
   // ── Event picker state ─────────────────────────────────────────────────────
   const [ongoingEvents, setOngoingEvents] = useState<PublicEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(!paramEventId);
 
   useEffect(() => {
-    if (selectedEventId) return; 
+    if (selectedEventId) {
+      if (!selectedEventName) {
+        eventService.getEventById(selectedEventId)
+          .then(ev => setSelectedEventName(ev.name))
+          .catch(() => {});
+      }
+      return;
+    } 
     
     eventService.getAllEvents('Active')
       .then(data => {
@@ -29,11 +42,10 @@ export default function WishwallModerationPage() {
       })
       .catch(() => {})
       .finally(() => setEventsLoading(false));
-  }, [selectedEventId]);
+  }, [selectedEventId, selectedEventName]);
 
   const handleSelectEvent = (ev: PublicEvent) => {
-    setSelectedEventName(ev.name);
-    setSelectedEventId(ev.id);
+    navigate(`/events/${ev.id}/wishwall/moderation`);
   };
 
   // ── Pending messages state ─────────────────────────────────────────────────
@@ -82,7 +94,7 @@ export default function WishwallModerationPage() {
           {
             id: payload.id,
             userId: '',
-            userName: '(loading)',
+            userName: payload.userName,
             message: payload.message,
             sentiment: payload.sentiment,
             createdAt: payload.createdAt,
@@ -133,7 +145,7 @@ export default function WishwallModerationPage() {
         {/* Header bar */}
         <div className="h-16 flex items-center justify-between px-8 border-b border-white/10 bg-black/70 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <span className="text-white/80 text-xl font-semibold tracking-wide">Wish Wall Staff</span>
+            <span className="text-white/80 text-xl font-semibold tracking-wide">Wishwall Staff</span>
           </div>
           <button
             onClick={() => {
@@ -142,12 +154,12 @@ export default function WishwallModerationPage() {
             }}
             className="text-xs text-white/50 hover:text-white transition-colors border border-white/10 hover:border-white/30 px-3 py-1 rounded-full"
           >
-            LOGOUT
+            ĐĂNG XUẤT
           </button>
         </div>
 
         <div className="flex-1 flex flex-col items-center pt-12 p-6 max-w-2xl mx-auto w-full">
-          <h1 className="text-3xl font-bold text-white mb-2 text-center">Wishwall Moderation</h1>
+          <h1 className="text-3xl font-bold text-white mb-2 text-center">Duyệt Wishwall</h1>
           <p className="text-white/40 mb-10 text-center">Chọn sự kiện đang diễn ra để bắt đầu duyệt tin nhắn.</p>
 
           {eventsLoading ? (
@@ -200,7 +212,7 @@ export default function WishwallModerationPage() {
       {/* Header bar */}
       <div className="h-16 flex items-center justify-between px-8 border-b border-white/10 bg-black/70 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex flex-col">
-          <span className="text-white/80 text-xl font-semibold tracking-wide">Wishwall Staff</span>
+          <span className="text-white/80 text-xl font-semibold tracking-wide">Duyệt Wishwall Staff</span>
           {selectedEventName && (
             <span className="text-teal-400 text-[10px] font-bold uppercase tracking-widest">{selectedEventName}</span>
           )}
@@ -231,7 +243,7 @@ export default function WishwallModerationPage() {
             }}
             className="text-[10px] font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors border border-white/10 hover:border-white/30 px-3 py-1 rounded-full"
           >
-            LOGOUT
+            ĐĂNG XUẤT
           </button>
         </div>
       </div>
@@ -255,7 +267,7 @@ export default function WishwallModerationPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-sm font-bold text-teal-400/90 uppercase tracking-wider">
-                        {msg.userName || 'Anonymous'}
+                        {msg.userName || 'Ẩn danh'}
                       </span>
                       <span
                         className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${
@@ -264,7 +276,7 @@ export default function WishwallModerationPage() {
                           'border-white/20 text-white/50 bg-white/5'
                         }`}
                       >
-                        {msg.sentiment}
+                        {msg.sentiment === 'Positive' ? 'NỔI BẬT' : msg.sentiment === 'Negative' ? 'TỪ CHỐI' : 'BÌNH THƯỜNG'}
                       </span>
                     </div>
                     <p className="text-white text-lg font-light leading-relaxed">{msg.message}</p>
@@ -278,25 +290,25 @@ export default function WishwallModerationPage() {
                   <button
                     disabled={!!actionId}
                     onClick={() => handleDisplay(msg, 'Positive')}
-                    className="flex-1 py-3 rounded-2xl bg-emerald-500 text-black text-[10px] font-extrabold uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-40"
+                    className="flex-1 py-3 rounded-2xl bg-amber-500 text-white text-[10px] font-extrabold uppercase tracking-widest hover:bg-amber-400 transition-all disabled:opacity-40 shadow-lg shadow-amber-500/20"
                   >
-                    {actionId === `display-${msg.id}-Positive` ? 'Wait...' : '✅ POSITIVE'}
+                    {actionId === `display-${msg.id}-Positive` ? 'Đang xử lý...' : 'NỔI BẬT'}
                   </button>
 
                   <button
                     disabled={!!actionId}
                     onClick={() => handleDisplay(msg, 'Neutral')}
-                    className="flex-1 py-3 rounded-2xl bg-white text-black text-[10px] font-extrabold uppercase tracking-widest hover:bg-gray-200 transition-all disabled:opacity-40"
+                    className="flex-1 py-3 rounded-2xl bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-widest hover:bg-emerald-500 transition-all disabled:opacity-40 shadow-lg shadow-emerald-600/20"
                   >
-                    {actionId === `display-${msg.id}-Neutral` ? 'Wait...' : '📄 NEUTRAL'}
+                    {actionId === `display-${msg.id}-Neutral` ? 'Đang xử lý...' : 'BÌNH THƯỜNG'}
                   </button>
 
                   <button
                     disabled={!!actionId}
                     onClick={() => handleReject(msg)}
-                    className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-rose-500/60 hover:text-rose-400 hover:border-rose-500/50 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40"
+                    className="flex-1 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-500 text-[10px] font-extrabold uppercase tracking-widest transition-all disabled:opacity-40 shadow-lg shadow-rose-600/20"
                   >
-                    {actionId === `reject-${msg.id}` ? '...' : '✕'}
+                    {actionId === `reject-${msg.id}` ? 'Đang xử lý...' : 'TỪ CHỐI'}
                   </button>
                 </div>
               </li>
