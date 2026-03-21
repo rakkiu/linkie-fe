@@ -16,6 +16,14 @@ import WishwallModerationPage from './pages/WishwallModerationPage';
 import LedScreenPage from './pages/LedScreenPage';
 import EventsPage from './pages/EventsPage';
 
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   if (!user || user.role !== 'admin') {
