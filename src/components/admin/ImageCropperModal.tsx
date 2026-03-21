@@ -84,7 +84,7 @@ export default function ImageCropperModal({ image, onCropComplete, onCancel }: I
       <div className="relative w-full max-w-4xl h-[80vh] bg-[#1a1b2e] rounded-3xl overflow-hidden flex flex-col border border-white/10">
         {/* Header */}
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
-          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Cắt ảnh Thumbnail (16:10)</h3>
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Cắt ảnh bìa (16:10)</h3>
           <button onClick={onCancel} className="text-white/40 hover:text-white">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
@@ -107,7 +107,7 @@ export default function ImageCropperModal({ image, onCropComplete, onCancel }: I
         <div className="p-6 bg-[#0f1221] border-t border-white/10">
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-4">
-              <span className="text-white/40 text-xs font-bold uppercase tracking-wider min-w-[60px]">Zoom</span>
+              <span className="text-white/40 text-xs font-bold uppercase tracking-wider min-w-[60px]">Thu phóng</span>
               <input
                 type="range"
                 value={zoom}

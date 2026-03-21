@@ -31,16 +31,16 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      const lowerEmail = email.toLowerCase();
+      const user = await login(email, password);
+      const role = user?.role;
       
       if (from) {
         navigate(from, { replace: true });
-      } else if (lowerEmail.includes('admin')) {
-        navigate('/admin');
-      } else if (lowerEmail.includes('staff')) {
-        navigate('/staff/wishwall');
-      } else if (lowerEmail.includes('led')) {
+      } else if (role === 'admin') {
+        navigate('/admin/events');
+      } else if (role === 'staff') {
+        navigate('/staff/wishwall'); 
+      } else if (role === 'led') {
         navigate('/led');
       } else {
         navigate('/');
@@ -60,8 +60,8 @@ export default function LoginPage() {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      await loginWithGoogle();
-      navigate(from ?? '/');
+      const user = await loginWithGoogle();
+      navigate(from ?? (user?.role === 'admin' ? '/admin/events' : '/'));
     } finally {
       setLoading(false);
     }

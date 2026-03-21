@@ -169,7 +169,7 @@ export default function AdminReportPage() {
     <AdminLayout activePage="report">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
         <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 800, letterSpacing: '1px', margin: 0 }}>
-          {eventName.toUpperCase()} REPORT
+          BÁO CÁO {eventName.toUpperCase()}
         </h1>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -185,7 +185,7 @@ export default function AdminReportPage() {
               minWidth: '220px',
             }}
           >
-            {events.length === 0 && <option value="">No events</option>}
+            {events.length === 0 && <option value="">Không có sự kiện</option>}
             {events.map(event => (
               <option key={event.id} value={event.id}>{event.name}</option>
             ))}
@@ -207,7 +207,7 @@ export default function AdminReportPage() {
               opacity: report ? 1 : 0.5,
             }}
           >
-            EXPORT DATA
+            XUẤT DỮ LIỆU
           </button>
         </div>
       </div>
@@ -216,20 +216,20 @@ export default function AdminReportPage() {
       {error && <div style={{ color: '#ff6b6b', marginBottom: '16px' }}>{error}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
-        <KpiCard title="Total Traffic" value={formatNumber(report?.totalTraffic ?? 0)} subtext="Participants" />
-        <KpiCard title="Total Engagement" value={formatNumber(report?.totalEngagement ?? 0)} subtext="Photos & Wishes" />
-        <KpiCard title="Conversion Rate" value={formatPercent(report?.conversionRate ?? 0)} subtext="Traffic to Engagement" />
-        <KpiCard title="Average time on website" value={formatDuration(report?.averageSessionSeconds ?? 0)} subtext="Estimated session duration" />
+        <KpiCard title="Tổng lưu lượng" value={formatNumber(report?.totalTraffic ?? 0)} subtext="Người tham gia" />
+        <KpiCard title="Tổng tương tác" value={formatNumber(report?.totalEngagement ?? 0)} subtext="Ảnh & Lời chúc" />
+        <KpiCard title="Tỷ lệ chuyển đổi" value={formatPercent(report?.conversionRate ?? 0)} subtext="Lưu lượng sang Tương tác" />
+        <KpiCard title="Thời gian trung bình" value={formatDuration(report?.averageSessionSeconds ?? 0)} subtext="Thời lượng phiên ước tính" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', alignItems: 'stretch' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ ...cardStyle, flex: 1 }}>
-            <div style={{ color: 'white', fontSize: '16px', fontWeight: 700, marginBottom: '24px', letterSpacing: '1px' }}>Camera Frame Analytics</div>
+            <div style={{ color: 'white', fontSize: '16px', fontWeight: 700, marginBottom: '24px', letterSpacing: '1px' }}>Phân tích AR Frame</div>
             <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start', flex: 1 }}>
               <FrameBarChart frames={report?.frameUsage.frames ?? []} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '120px' }}>
-                {frameLegend.length === 0 && <span style={{ color: '#7b8396', fontSize: '13px' }}>No frame data</span>}
+                {frameLegend.length === 0 && <span style={{ color: '#7b8396', fontSize: '13px' }}>Không có dữ liệu frame</span>}
                 {frameLegend.map(f => (
                   <div key={f.key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: f.color, display: 'inline-block' }} />
@@ -242,13 +242,13 @@ export default function AdminReportPage() {
           </div>
 
           <div style={cardStyle}>
-            <div style={{ color: 'white', fontSize: '14px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>HEAT MAP</div>
+            <div style={{ color: 'white', fontSize: '14px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>BẢN ĐỒ NHIỆT</div>
             <HeatMapChart values={(report?.heatMap ?? []).map(item => item.value)} />
           </div>
         </div>
 
         <div style={{ ...cardStyle, gap: '24px' }}>
-          <div style={{ color: 'white', fontSize: '16px', fontWeight: 700, letterSpacing: '1px' }}>Wishwall Analytics</div>
+          <div style={{ color: 'white', fontSize: '16px', fontWeight: 700, letterSpacing: '1px' }}>Phân tích Wishwall</div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', margin: '20px 0' }}>
             <svg width="180" height="180" viewBox="0 0 180 180">
@@ -270,16 +270,16 @@ export default function AdminReportPage() {
           <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#00e676' }} />
-              <span style={{ color: 'white', fontSize: '13px' }}>Tích cực ({report?.wishwall.positiveCount ?? 0})</span>
+              <span style={{ color: 'white', fontSize: '13px' }}>Nổi bật ({report?.wishwall.positiveCount ?? 0})</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#e91e8c' }} />
-              <span style={{ color: 'white', fontSize: '13px' }}>Tiêu cực ({report?.wishwall.negativeCount ?? 0})</span>
+              <span style={{ color: 'white', fontSize: '13px' }}>Từ chối ({report?.wishwall.negativeCount ?? 0})</span>
             </div>
           </div>
 
           <div>
-            <div style={{ color: 'white', fontSize: '14px', fontWeight: 700, marginBottom: '16px' }}>Top Keywords</div>
+            <div style={{ color: 'white', fontSize: '14px', fontWeight: 700, marginBottom: '16px' }}>Từ khóa hàng đầu</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {(report?.wishwall.topKeywords ?? []).map((keyword, i) => (
                 <div key={`${keyword.keyword}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

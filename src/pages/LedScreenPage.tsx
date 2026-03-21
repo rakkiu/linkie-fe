@@ -27,22 +27,17 @@ interface PhysicsItem extends LedDisplayMessage {
 }
 
 const SENTIMENT_GLOW: Record<string, string> = {
-  Positive: 'shadow-green-500/40',
-  Neutral: 'shadow-teal-400/30',
+  Positive: 'shadow-[0_0_30px_rgba(250,204,21,0.5)]',
+  Neutral: 'shadow-[0_0_30px_rgba(250,204,21,0.3)]',
   Negative: 'shadow-rose-500/40',
 };
 
 const SENTIMENT_BORDER: Record<string, string> = {
-  Positive: 'border-green-500/50',
-  Neutral: 'border-teal-400/40',
+  Positive: 'border-[#b91c1c]/40',
+  Neutral: 'border-[#facc15]/30',
   Negative: 'border-rose-500/50',
 };
 
-const SENTIMENT_TEXT: Record<string, string> = {
-  Positive: 'text-green-300',
-  Neutral: 'text-teal-300',
-  Negative: 'text-rose-300',
-};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -175,6 +170,17 @@ export default function LedScreenPage() {
       className="fixed inset-0 bg-black overflow-hidden select-none"
       style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}
     >
+      <style>{`
+        @keyframes sparkle {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-sparkle {
+          background: linear-gradient(90deg, rgba(255,215,0,0) 0%, rgba(255,215,0,0.3) 50%, rgba(255,215,0,0) 100%);
+          background-size: 200% 100%;
+          animation: sparkle 3s infinite linear;
+        }
+      `}</style>
       {/* Header bar */}
       <div
         className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-8 border-b border-white/10 bg-black/70 backdrop-blur-sm"
@@ -332,7 +338,6 @@ function MessageCard({
 }) {
   const glow = SENTIMENT_GLOW[item.sentiment] ?? 'shadow-white/10';
   const border = SENTIMENT_BORDER[item.sentiment] ?? 'border-white/20';
-  const sentimentText = SENTIMENT_TEXT[item.sentiment] ?? 'text-slate-300';
 
   const ref = useCallback(
     (el: HTMLDivElement | null) => {
@@ -342,24 +347,35 @@ function MessageCard({
     [item.key, cardElsRef],
   );
 
+  const isPositive = item.sentiment === 'Positive';
+  const isNeutral = item.sentiment === 'Neutral';
+
   return (
     <div
       ref={ref}
-      className={`absolute top-0 left-0 rounded-2xl border p-5 bg-white/5 backdrop-blur-sm shadow-2xl ${glow} ${border}`}
+      className={`absolute top-0 left-0 rounded-2xl border p-5 shadow-2xl ${glow} ${border} overflow-hidden`}
       style={{
         width: CARD_W,
         transform: `translate(${item.x}px, ${item.y}px)`,
         willChange: 'transform, opacity',
+        background: isPositive 
+          ? 'linear-gradient(135deg, #facc15, #fde047)' 
+          : isNeutral 
+            ? 'linear-gradient(135deg, #1e3a8a, #172554)' 
+            : 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: isPositive || isNeutral ? 'none' : 'blur(8px)',
       }}
     >
-      <p className="text-white text-lg leading-relaxed mb-3 font-light">{item.message}</p>
+      {isPositive && (
+        <div className="absolute inset-0 animate-sparkle pointer-events-none" />
+      )}
+      <p className={`relative z-10 text-lg leading-relaxed mb-3 font-bold ${isPositive ? 'text-[#b91c1c]' : isNeutral ? 'text-[#facc15]' : 'text-white'}`}>
+        {item.message}
+      </p>
 
-      <div className="flex items-center justify-between">
-        <span className="text-white/50 text-sm font-medium truncate max-w-[60%]">
+      <div className="relative z-10 flex items-center justify-between">
+        <span className={`text-sm font-bold truncate max-w-[90%] ${isPositive ? 'text-[#b91c1c]/80' : isNeutral ? 'text-[#facc15]/80' : 'text-white/70'}`}>
           — {item.userName}
-        </span>
-        <span className={`text-xs font-semibold uppercase tracking-wide ${sentimentText}`}>
-          {item.sentiment}
         </span>
       </div>
     </div>

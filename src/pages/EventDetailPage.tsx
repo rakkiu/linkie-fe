@@ -91,9 +91,9 @@ export default function EventDetailPage() {
             </div>
           </div>
           <div className="text-center">
-            <p className="text-white font-black text-xl tracking-wide">Camera Frame</p>
+            <p className="text-white font-black text-xl tracking-wide uppercase">Camera AR</p>
             <p className="text-white/90 text-[13px] mt-1 font-medium leading-tight">
-              Lưu giữ khoảnh khắc cùng Frame độc quyền
+              Lưu giữ khoảnh khắc cùng AR Frame độc quyền
             </p>
           </div>
         </Link>
@@ -111,7 +111,7 @@ export default function EventDetailPage() {
             </div>
           </div>
           <div className="text-center">
-            <p className="text-white font-black text-xl tracking-wide">Wishwall</p>
+            <p className="text-white font-black text-xl tracking-wide uppercase">Wishwall</p>
             <p className="text-white/90 text-[13px] mt-1 font-medium leading-tight">
               Gửi lời tâm tình đến màn hình LED
             </p>

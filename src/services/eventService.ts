@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { apiClient, BASE_URL, ACCESS_TOKEN_KEY } from './apiClient';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -89,8 +89,20 @@ export const eventService = {
     }));
   },
 
-  /** POST — Ghi nhận lượt sử dụng Frame (chụp ảnh) */
+  /** POST — Ghi nhận lượt sử dụng Frame (chụp ảnh) - Dùng fetch để tránh axios 401 interceptor gây logout */
   recordFrameUsage: async (eventId: string, frameId: string): Promise<void> => {
-    await apiClient.post(`/events/${eventId}/frames/${frameId}/usage`);
+    try {
+      const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+      await fetch(`${BASE_URL}/events/${eventId}/frames/${frameId}/usage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({})
+      });
+    } catch (error) {
+      console.error('Failed to record frame usage (silent):', error);
+    }
   },
 };

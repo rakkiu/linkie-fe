@@ -18,7 +18,7 @@ function DonutChart({ profile }: { profile: FanProfile | null }) {
   if (!profile || !profile.framePreferences.length) {
     return (
       <div style={{ width: '100px', height: '100px', borderRadius: '50%', border: '8px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#666' }}>
-        No Data
+        Không có dữ liệu
       </div>
     );
   }
@@ -229,7 +229,7 @@ export default function AdminFanInsightsPage() {
               fontSize: '13px',
             }}
           >
-            Refresh
+            Làm mới
           </button>
 
           <button 
@@ -248,7 +248,7 @@ export default function AdminFanInsightsPage() {
               opacity: insights.length ? 1 : 0.5,
             }}
           >
-            EXPORT EXCEL
+            XUẤT EXCEL
           </button>
         </div>
       </div>
@@ -256,10 +256,10 @@ export default function AdminFanInsightsPage() {
       {error && <div style={{ color: '#ff6b6b', marginBottom: '16px' }}>{error}</div>}
 
       {/* Search & Filter */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+    <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
           <input
-            placeholder="Search by name or email"
+            placeholder="Tìm kiếm theo tên hoặc email"
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{
@@ -289,10 +289,10 @@ export default function AdminFanInsightsPage() {
             cursor: 'pointer',
           }}
         >
-          <option value="All">Engagement: All</option>
-          <option value="High">Engagement: High (&gt;15)</option>
-          <option value="Medium">Engagement: Medium (5-15)</option>
-          <option value="Low">Engagement: Low (&lt;5)</option>
+          <option value="All">Tương tác: Tất cả</option>
+          <option value="High">Tương tác: Cao (&gt;15)</option>
+          <option value="Medium">Tương tác: Trung bình (5-15)</option>
+          <option value="Low">Tương tác: Thấp (&lt;5)</option>
         </select>
       </div>
 
@@ -306,7 +306,7 @@ export default function AdminFanInsightsPage() {
           minHeight: '400px'
         }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>Loading data...</div>
+            <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>Đang tải dữ liệu...</div>
           ) : (
             <>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -315,8 +315,8 @@ export default function AdminFanInsightsPage() {
                     <th style={headerStyle}>Họ và tên</th>
                     <th style={headerStyle}>Email</th>
                     <th style={{ ...headerStyle, textAlign: 'center' }}>Tổng ảnh</th>
-                    <th style={headerStyle}>Frames đã dùng</th>
-                    <th style={{ ...headerStyle, textAlign: 'center' }}>Wishes</th>
+                    <th style={headerStyle}>AR Frames đã dùng</th>
+                    <th style={{ ...headerStyle, textAlign: 'center' }}>Lời chúc</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -402,7 +402,7 @@ export default function AdminFanInsightsPage() {
                 
                 {eventFrameStats.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                    <span style={{ color: '#888', fontSize: '11px', fontWeight: 700, width: '100%', marginBottom: '4px', letterSpacing: '1px' }}>CHI TIẾT FRAME SỰ KIỆN:</span>
+                    <span style={{ color: '#888', fontSize: '11px', fontWeight: 700, width: '100%', marginBottom: '4px', letterSpacing: '1px' }}>CHI TIẾT AR FRAME SỰ KIỆN:</span>
                     {eventFrameStats.map((fs, idx) => (
                       <div key={idx} style={{ 
                         background: 'rgba(255,255,255,0.04)', 
@@ -432,15 +432,15 @@ export default function AdminFanInsightsPage() {
           top: '24px'
         }}>
           {profileLoading ? (
-            <div style={{ color: '#666', textAlign: 'center' }}>Loading profile...</div>
+            <div style={{ color: '#666', textAlign: 'center' }}>Đang tải hồ sơ...</div>
           ) : profile ? (
             <>
               <div style={{ color: 'white', fontWeight: 800, fontSize: '14px', letterSpacing: '2px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-                FAN PROFILE: <span style={{ color: '#00bcd4' }}>{profile.name.toUpperCase()}</span>
+                HỒ SƠ FAN: <span style={{ color: '#00bcd4' }}>{profile.name.toUpperCase()}</span>
               </div>
 
               <div style={{ marginBottom: '32px' }}>
-                <div style={{ color: '#888', fontSize: '11px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>FRAME PREFERENCES</div>
+                <div style={{ color: '#888', fontSize: '11px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>LỰA CHỌN AR FRAME</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <DonutChart profile={profile} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -457,7 +457,7 @@ export default function AdminFanInsightsPage() {
               </div>
 
               <div>
-                <div style={{ color: '#888', fontSize: '11px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>WISHWALL ACTIVITY ({profile.recentMessages.length})</div>
+                <div style={{ color: '#888', fontSize: '11px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>HOẠT ĐỘNG WISHWALL ({profile.recentMessages.length})</div>
                 <div style={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
@@ -479,7 +479,7 @@ export default function AdminFanInsightsPage() {
                           fontSize: '10px', 
                           fontWeight: 800 
                         }}>
-                          {msg.sentiment === 1 ? 'POSITIVE' : msg.sentiment === 2 ? 'NEGATIVE' : 'NEUTRAL'}
+                          {msg.sentiment === 1 ? 'NỔI BẬT' : msg.sentiment === 2 ? 'TỪ CHỐI' : 'BÌNH THƯỜNG'}
                         </span>
                         <span style={{ color: '#666', fontSize: '10px' }}>
                           {new Date(msg.createdAt).toLocaleDateString([], { day: '2-digit', month: '2-digit' })} {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
