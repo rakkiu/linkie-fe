@@ -6,6 +6,7 @@ import CameraFramePage from './pages/CameraFramePage';
 import WishwallPage from './pages/WishwallPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminFanInsightsPage from './pages/admin/AdminFanInsightsPage';
 import AdminReportPage from './pages/admin/AdminReportPage';
@@ -87,6 +88,9 @@ function App() {
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/change-password" element={
+            <PrivateRoute><ChangePasswordPage /></PrivateRoute>
+          } />
           
           {/* Admin & Staff Routes */}
           <Route path="/admin" element={

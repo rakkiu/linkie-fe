@@ -120,11 +120,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return googleUser;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const register = async (name: string, email: string, _password: string) => {
-    const regUser: AuthUser = { name, email, role: 'user', id: 'temp' };
-    setUser(regUser);
-    return regUser;
+  const register = async (name: string, email: string, password: string) => {
+    await authService.register(name, email, password);
+    return await login(email, password);
   };
 
   const logout = () => {

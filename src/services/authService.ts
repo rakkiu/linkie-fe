@@ -6,7 +6,23 @@ export interface LoginResponse {
   refreshToken: string;
 }
 
+export interface RegisterResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 export const authService = {
+  register: async (name: string, email: string, password: string): Promise<RegisterResponse> => {
+    const response = await axios.post(`${BASE_URL}/Auth/register`, {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
+    });
+    return response.data.data ?? response.data;
+  },
+
   login: async (email: string, password: string): Promise<LoginResponse> => {
     // We use a clean axios instance here to avoid the interceptor attaching a non-existent token for login
     const response = await axios.post(`${BASE_URL}/Auth/login`, {
