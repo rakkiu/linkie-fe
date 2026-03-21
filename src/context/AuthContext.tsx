@@ -26,9 +26,9 @@ const decodeJWT = (token: string) => {
 
 interface AuthContextType {
   user: AuthUser | null;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  loginWithGoogle: () => Promise<AuthUser>;
+  register: (name: string, email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
@@ -85,38 +85,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           else if (r === 'organizer') role = 'organizer';
         }
 
-        setUser({ 
+        const newUser: AuthUser = { 
           name, 
           email: payload["email"] || email, 
           role,
           id: userId
-        });
-        return;
+        };
+        setUser(newUser);
+        return newUser;
       }
     }
 
     // Fallback logic if token decoding fails (old logic with slight improvement)
+    let fallbackUser: AuthUser;
     if (email.toLowerCase().includes('admin')) {
-      setUser({ name: 'Admin', email, role: 'admin', id: '0' });
+      fallbackUser = { name: 'Admin', email, role: 'admin', id: '0' };
     } else if (email.toLowerCase().includes('staff')) {
-      setUser({ name: 'Staff User', email, role: 'staff', id: '0' });
+      fallbackUser = { name: 'Staff User', email, role: 'staff', id: '0' };
     } else if (email.toLowerCase().includes('organizer')) {
-      setUser({ name: 'Organizer User', email, role: 'organizer', id: '0' });
+      fallbackUser = { name: 'Organizer User', email, role: 'organizer', id: '0' };
     } else if (email.toLowerCase().includes('led')) {
-      setUser({ name: 'LED Display', email, role: 'led', id: '0' });
+      fallbackUser = { name: 'LED Display', email, role: 'led', id: '0' };
     } else {
       const name = email.split('@')[0];
-      setUser({ name, email, role: 'user', id: '0' });
+      fallbackUser = { name, email, role: 'user', id: '0' };
     }
+    setUser(fallbackUser);
+    return fallbackUser;
   };
 
   const loginWithGoogle = async () => {
-    setUser({ name: 'Google User', email: 'user@gmail.com', role: 'user', id: 'google' });
+    const googleUser: AuthUser = { name: 'Google User', email: 'user@gmail.com', role: 'user', id: 'google' };
+    setUser(googleUser);
+    return googleUser;
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const register = async (name: string, email: string, _password: string) => {
-    setUser({ name, email, role: 'user', id: 'temp' });
+    const regUser: AuthUser = { name, email, role: 'user', id: 'temp' };
+    setUser(regUser);
+    return regUser;
   };
 
   const logout = () => {

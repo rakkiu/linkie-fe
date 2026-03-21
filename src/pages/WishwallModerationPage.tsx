@@ -83,6 +83,7 @@ export default function WishwallModerationPage() {
   const [activeTab, setActiveTab] = useState<'pending' | 'ai-logs'>('pending');
   const [aiLogs, setAiLogs] = useState<WishwallAiLog[]>([]);
   const [aiLogsLoading, setAiLogsLoading] = useState(false);
+  const [systemAlert, setSystemAlert] = useState<{ alertType: string, message: string } | null>(null);
 
   // ── Load pending messages ──────────────────────────────────────────────────
   const loadPending = useCallback(async () => {
@@ -153,6 +154,18 @@ export default function WishwallModerationPage() {
         ];
         return sortPendingMessages(next);
       });
+    });
+
+    conn.on('SystemAlert', (payload: { alertType: string, message: string }) => {
+      console.warn('SignalR SystemAlert received:', payload);
+      setSystemAlert(payload);
+      // Auto-clear alert after 10 seconds
+      setTimeout(() => setSystemAlert(null), 10000);
+    });
+
+    conn.on('NewAiLog', (payload: WishwallAiLog) => {
+      console.log('SignalR NewAiLog received:', payload);
+      setAiLogs(prev => [payload, ...prev]);
     });
 
     return () => {
@@ -301,6 +314,19 @@ export default function WishwallModerationPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-8 w-full">
+        {systemAlert && (
+          <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+            <span className="text-2xl">⚠️</span>
+            <div className="flex-1">
+              <div className="text-rose-400 font-bold text-xs uppercase tracking-widest">{systemAlert.alertType}</div>
+              <p className="text-white/80 text-sm">{systemAlert.message}</p>
+            </div>
+            <button onClick={() => setSystemAlert(null)} className="text-white/40 hover:text-white transition-colors">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 mb-6">
           <button
             onClick={() => setActiveTab('pending')}
@@ -322,11 +348,27 @@ export default function WishwallModerationPage() {
           >
             AI Logs
           </button>
+          {activeTab === 'pending' && (
+            <button
+              onClick={() => loadPending()}
+              disabled={loading}
+              className="ml-auto px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-teal-500/50 text-teal-400 bg-teal-500/10 hover:bg-teal-500/20 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(20,184,166,0.2)]"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={loading ? 'animate-spin' : ''}>
+                <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+              </svg>
+              Refresh
+            </button>
+          )}
           {activeTab === 'ai-logs' && (
             <button
               onClick={() => loadAiLogs()}
-              className="ml-2 px-3 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/10 text-white/40 hover:text-white/80"
+              disabled={aiLogsLoading}
+              className="ml-auto px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-amber-500/50 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
             >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={aiLogsLoading ? 'animate-spin' : ''}>
+                <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+              </svg>
               Refresh
             </button>
           )}
@@ -350,18 +392,18 @@ export default function WishwallModerationPage() {
               >
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm font-bold text-teal-400/90 uppercase tracking-wider">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-base font-bold text-teal-400 uppercase tracking-wider">
                         {msg.userName || 'Ẩn danh'}
                       </span>
                       <span
-                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${aiMeta.className}`}
+                        className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${aiMeta.className}`}
                         title={msg.aiReason ?? ''}
                       >
                         {aiMeta.text}
                       </span>
                       <span
-                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                        className={`text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${
                           msg.sentiment === 'Positive' ? 'border-green-500/30 text-green-400 bg-green-500/10' :
                           msg.sentiment === 'Negative' ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' :
                           'border-white/20 text-white/50 bg-white/5'
@@ -370,28 +412,28 @@ export default function WishwallModerationPage() {
                         {msg.sentiment === 'Positive' ? 'NỔI BẬT' : msg.sentiment === 'Negative' ? 'TỪ CHỐI' : 'BÌNH THƯỜNG'}
                       </span>
                     </div>
-                    <p className="text-white text-lg font-light leading-relaxed">{msg.message}</p>
+                    <p className="text-white text-2xl font-light leading-relaxed">{msg.message}</p>
                   </div>
-                  <span className="text-white/20 text-xs font-medium shrink-0">
+                  <span className="text-white/30 text-sm font-medium shrink-0">
                     {formatToLocalTime(msg.createdAt)}
                   </span>
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t border-white/5">
+                <div className="flex gap-4 pt-5 border-t border-white/5">
                   <button
                     disabled={!!actionId}
                     onClick={() => handleDisplay(msg, 'Positive')}
-                    className="flex-1 py-3 rounded-2xl bg-amber-500 text-white text-[10px] font-extrabold uppercase tracking-widest hover:bg-amber-400 transition-all disabled:opacity-40 shadow-lg shadow-amber-500/20"
+                    className="flex-1 py-4 rounded-2xl bg-amber-500 text-white text-xs font-extrabold uppercase tracking-widest hover:bg-amber-400 transition-all disabled:opacity-40 shadow-lg shadow-amber-500/20"
                   >
-                    {actionId === `display-${msg.id}-Positive` ? 'Đang xử lý...' : 'NỔI BẬT'}
+                    {actionId === `display-${msg.id}-Positive` ? 'XỬ LÝ...' : 'NỔI BẬT'}
                   </button>
 
                   <button
                     disabled={!!actionId}
                     onClick={() => handleDisplay(msg, 'Neutral')}
-                    className="flex-1 py-3 rounded-2xl bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-widest hover:bg-emerald-500 transition-all disabled:opacity-40 shadow-lg shadow-emerald-600/20"
+                    className="flex-1 py-4 rounded-2xl bg-emerald-600 text-white text-xs font-extrabold uppercase tracking-widest hover:bg-emerald-500 transition-all disabled:opacity-40 shadow-lg shadow-emerald-600/20"
                   >
-                    {actionId === `display-${msg.id}-Neutral` ? 'Đang xử lý...' : 'BÌNH THƯỜNG'}
+                    {actionId === `display-${msg.id}-Neutral` ? 'XỬ LÝ...' : 'BÌNH THƯỜNG'}
                   </button>
 
                   <button
@@ -416,28 +458,28 @@ export default function WishwallModerationPage() {
             </div>
           ) : (
             <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
-              <div className="grid grid-cols-6 gap-2 px-4 py-3 text-[10px] uppercase tracking-widest text-white/40 border-b border-white/10">
+              <div className="grid grid-cols-6 gap-2 px-6 py-4 text-xs font-bold uppercase tracking-[0.2em] text-white/40 border-b border-white/10">
                 <div className="col-span-2">Message</div>
                 <div>Label</div>
                 <div className="col-span-2">Reason</div>
                 <div>Time</div>
               </div>
-              <div className="max-h-[520px] overflow-y-auto">
+              <div className="max-h-[600px] overflow-y-auto">
                 {aiLogs.map(log => {
                   const aiMeta = getAiLabelMeta(log.label);
                   return (
-                    <div key={log.messageId} className="grid grid-cols-6 gap-2 px-4 py-3 text-sm border-b border-white/5">
-                      <div className="col-span-2 text-white/90">{log.message}</div>
+                    <div key={`${log.messageId}-${log.createdAt}`} className="grid grid-cols-6 gap-2 px-6 py-5 text-base border-b border-white/5 items-center">
+                      <div className="col-span-2 text-white font-medium">{log.message}</div>
                       <div>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${aiMeta.className}`}>
+                        <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${aiMeta.className}`}>
                           {aiMeta.text}
                         </span>
-                        <div className="text-[10px] text-white/40 mt-1">
-                          {log.source} - {Math.round(log.durationMs)}ms
+                        <div className="text-[11px] text-white/30 mt-1.5 font-medium italic">
+                          {log.source} — {Math.round(log.durationMs)}ms
                         </div>
                       </div>
-                      <div className="col-span-2 text-white/50 text-xs">{log.reason}</div>
-                      <div className="text-white/40 text-xs">{formatToLocalTime(log.createdAt)}</div>
+                      <div className="col-span-2 text-white/50 text-sm italic">{log.reason}</div>
+                      <div className="text-white/30 text-xs font-mono">{formatToLocalTime(log.createdAt)}</div>
                     </div>
                   );
                 })}

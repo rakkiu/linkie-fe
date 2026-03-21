@@ -31,19 +31,15 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      
-      // Use the updated role from context storage after login
-      const stored = localStorage.getItem('linkie_user');
-      const userObj = stored ? JSON.parse(stored) : null;
-      const role = userObj?.role;
+      const user = await login(email, password);
+      const role = user?.role;
       
       if (from) {
         navigate(from, { replace: true });
       } else if (role === 'admin') {
-        navigate('/admin');
+        navigate('/admin/events');
       } else if (role === 'staff') {
-        navigate('/admin/events'); 
+        navigate('/staff/wishwall'); 
       } else if (role === 'led') {
         navigate('/led');
       } else {
@@ -64,8 +60,8 @@ export default function LoginPage() {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      await loginWithGoogle();
-      navigate(from ?? '/');
+      const user = await loginWithGoogle();
+      navigate(from ?? (user?.role === 'admin' ? '/admin/events' : '/'));
     } finally {
       setLoading(false);
     }

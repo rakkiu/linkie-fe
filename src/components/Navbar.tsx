@@ -42,7 +42,7 @@ export default function Navbar() {
         >
           Sự kiện
         </Link>
-        {(user?.role === 'admin' || user?.role === 'staff') && (
+        {user?.role === 'staff' && (
           <Link 
             to="/staff/wishwall" 
             className={`transition-colors whitespace-nowrap h-full flex items-center border-b-2 ${
@@ -52,7 +52,7 @@ export default function Navbar() {
             Duyệt Wishwall
           </Link>
         )}
-        {(user?.role === 'admin' || user?.role === 'led') && (
+        {user?.role === 'led' && (
           <Link 
             to="/led" 
             className={`transition-colors whitespace-nowrap h-full flex items-center border-b-2 ${

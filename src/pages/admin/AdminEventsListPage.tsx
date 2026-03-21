@@ -412,6 +412,22 @@ export default function AdminEventsListPage() {
                         <td style={cellStyle}>{event.isWishwallEnabled ? 'BẬT' : 'TẮT'}</td>
                         <td style={{ ...cellStyle, textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            {event.status === 'Ongoing' && isStaff && (
+                              <>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}/wishwall/moderation`); }}
+                                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #00e5ff', background: 'rgba(0,229,255,0.1)', color: '#00e5ff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                >
+                                  Duyệt
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}/wishwall/led`); }}
+                                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #e91e8c', background: 'rgba(233,30,140,0.1)', color: '#e91e8c', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                >
+                                  LED
+                                </button>
+                              </>
+                            )}
                             {!isStaff && (
                               <button
                                 disabled={deletingId === event.id}
