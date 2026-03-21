@@ -43,6 +43,14 @@ export interface DashboardSummary {
   frameUsageStats: FrameStats[];
   sentimentSummary: Record<string, number>;
   recentLiveMessages: LiveMessage[];
+  aiSummary?: {
+    total: number;
+    allow: number;
+    review: number;
+    block: number;
+    fallback: number;
+    avgDurationMs: number;
+  };
 }
 
 export interface FanProfile {

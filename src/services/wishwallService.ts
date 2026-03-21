@@ -1,6 +1,6 @@
 import * as signalR from '@microsoft/signalr';
 import axiosInstance from '../lib/axios';
-import type { PendingWishwallMessage, WishwallMessage } from '../types/wishwall';
+import type { PendingWishwallMessage, WishwallAiLog, WishwallMessage } from '../types/wishwall';
 
 // ── REST ──────────────────────────────────────────────────────────────────────
 
@@ -20,6 +20,11 @@ export const wishwallApi = {
   getPendingMessages: (eventId: string) =>
     axiosInstance.get<{ data: PendingWishwallMessage[] }>(
       `/api/events/${eventId}/wishwall/pending`,
+    ),
+
+  getAiLogs: (eventId: string, take: number = 200) =>
+    axiosInstance.get<{ data: WishwallAiLog[] }>(
+      `/api/admin/events/${eventId}/wishwall/ai-logs?take=${take}`,
     ),
 
   displayOnLed: (eventId: string, messageId: string) =>

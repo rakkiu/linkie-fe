@@ -6,7 +6,7 @@ import logoLinkieWhite from '../../image/logo-linkie-white.png';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  activePage: 'dashboard' | 'events' | 'fan-insights' | 'report' | 'create-event';
+  activePage: 'dashboard' | 'events' | 'fan-insights' | 'report' | 'create-event' | 'wishwall' | 'led';
 }
 
 export default function AdminLayout({ children, activePage }: AdminLayoutProps) {
@@ -19,11 +19,13 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
   };
 
   const allNavItems = [
-    { id: 'events', label: 'SỰ KIỆN', path: '/admin/events', roles: ['admin', 'staff'] },
+    { id: 'events', label: 'SỰ KIỆN', path: user?.role === 'admin' ? '/admin/events' : '/staff/events', roles: ['admin', 'staff'] },
     { id: 'create-event', label: 'TẠO SỰ KIỆN', path: '/admin/create-event', roles: ['admin'] },
     { id: 'dashboard', label: 'BẢNG ĐIỀU KHIỂN', path: '/admin', roles: ['admin'] },
     { id: 'fan-insights', label: 'TÌM HIỂU FAN', path: '/admin/fan-insights', roles: ['admin'] },
     { id: 'report', label: 'BÁO CÁO', path: '/admin/report', roles: ['admin'] },
+    { id: 'wishwall', label: 'DUYỆT WISHWALL', path: '/staff/wishwall', roles: ['staff'] },
+    { id: 'led', label: 'MÀN HÌNH LED', path: '/led', roles: ['led'] },
   ];
 
   const navItems = allNavItems.filter(item => 
@@ -52,7 +54,7 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
           />
           <div>
             <div style={{ color: '#00bcd4', fontWeight: 800, fontSize: '13px', lineHeight: 1 }}>Linkie</div>
-            <div style={{ color: 'white', fontWeight: 700, fontSize: '10px', letterSpacing: '2px' }}>ADMIN</div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize: '10px', letterSpacing: '2px' }}>{user?.role.toUpperCase()}</div>
           </div>
         </div>
 

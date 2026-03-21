@@ -8,6 +8,8 @@ export interface WishwallMessage {
   createdAt: string;
 }
 
+export type AiLabel = 'ALLOW' | 'REVIEW' | 'BLOCK';
+
 // Payload of SignalR "MessagePending" event (sent only to the author)
 export interface WishwallPendingMessage {
   id: string;
@@ -22,6 +24,8 @@ export interface WishwallStaffPending {
   message: string;
   sentiment: string;
   createdAt: string;
+  aiLabel?: AiLabel | null;
+  aiReason?: string | null;
 }
 
 // Item returned by GET /api/events/{id}/wishwall/pending
@@ -32,6 +36,8 @@ export interface PendingWishwallMessage {
   message: string;
   sentiment: string;
   createdAt: string;
+  aiLabel?: AiLabel | null;
+  aiReason?: string | null;
 }
 
 // Payload of SignalR "LedDisplay" event
@@ -40,5 +46,15 @@ export interface LedDisplayMessage {
   userName: string;
   message: string;
   sentiment: string;
+  createdAt: string;
+}
+
+export interface WishwallAiLog {
+  messageId: string;
+  message: string;
+  label: AiLabel;
+  reason: string;
+  source: 'fast' | 'gemini' | 'fallback';
+  durationMs: number;
   createdAt: string;
 }
