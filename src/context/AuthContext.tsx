@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../config/firebase';
 import { authService } from '../services/authService';
 import { eventBus } from '../services/apiClient'; export type UserRole = 'admin' | 'staff' | 'organizer' | 'led' | 'user';
 
@@ -115,9 +117,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithGoogle = async () => {
-    const googleUser: AuthUser = { name: 'Google User', email: 'user@gmail.com', role: 'user', id: 'google' };
-    setUser(googleUser);
-    return googleUser;
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      
+      const res = await authService.googleLogin(idToken);
+      
+      if (res && res.accessToken) {
+        const payload = decodeJWT(res.accessToken);
+        if (payload) {
+          const dotNetRole = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || payload["role"];
+          const name = payload["FullName"] || payload["name"] || result.user.displayName || 'Google User';
+          const userId = payload["sub"] || payload["id"];
+          
+          let role: UserRole = 'user';
+          if (dotNetRole) {
+            const r = dotNetRole.toLowerCase();
+            if (r === 'admin') role = 'admin';
+            else if (r === 'staff') role = 'staff';
+            else if (r === 'led') role = 'led';
+            else if (r === 'organizer') role = 'organizer';
+          }
+
+          const newUser: AuthUser = { 
+            name, 
+            email: result.user.email || '', 
+            role,
+            id: userId
+          };
+          setUser(newUser);
+          return newUser;
+        }
+      }
+      throw new Error("Failed to process Google Login response");
+    } catch (error) {
+      console.error("Google Login Error:", error);
+      throw error;
+    }
   };
 
   const register = async (name: string, email: string, password: string) => {
