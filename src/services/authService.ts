@@ -44,6 +44,23 @@ export const authService = {
     return data;
   },
 
+  googleLogin: async (idToken: string): Promise<LoginResponse> => {
+    const response = await axios.post(`${BASE_URL}/Auth/google-login`, {
+      idToken
+    });
+    
+    const data = response.data.data ?? response.data;
+    
+    if (data.accessToken) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+    }
+    if (data.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+    }
+    
+    return data;
+  },
+
   logout: () => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
