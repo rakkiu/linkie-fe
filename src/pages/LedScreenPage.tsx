@@ -1,14 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axiosInstance from '../lib/axios';
 import { createWishwallConnection } from '../services/wishwallService';
+import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
+import { useAuth } from '../context/AuthContext';
 import type { LedDisplayMessage } from '../types/wishwall';
-
-interface OngoingEvent {
-  id: string;
-  name: string;
-  location?: string;
-}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -32,49 +27,49 @@ interface PhysicsItem extends LedDisplayMessage {
 }
 
 const SENTIMENT_GLOW: Record<string, string> = {
-  Positive: 'shadow-green-500/40',
-  Neutral: 'shadow-teal-400/30',
+  Positive: 'shadow-[0_0_30px_rgba(250,204,21,0.5)]',
+  Neutral: 'shadow-[0_0_30px_rgba(250,204,21,0.3)]',
   Negative: 'shadow-rose-500/40',
 };
 
 const SENTIMENT_BORDER: Record<string, string> = {
-  Positive: 'border-green-500/50',
-  Neutral: 'border-teal-400/40',
+  Positive: 'border-[#b91c1c]/40',
+  Neutral: 'border-[#facc15]/30',
   Negative: 'border-rose-500/50',
 };
 
-const SENTIMENT_TEXT: Record<string, string> = {
-  Positive: 'text-green-300',
-  Neutral: 'text-teal-300',
-  Negative: 'text-rose-300',
-};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function LedScreenPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   // ── Event switcher state ───────────────────────────────────────────────────
   const [showEventPicker, setShowEventPicker] = useState(false);
-  const [ongoingEvents, setOngoingEvents] = useState<OngoingEvent[]>([]);
+  const [ongoingEvents, setOngoingEvents] = useState<PublicEvent[]>([]);
   const [currentEventName, setCurrentEventName] = useState<string>('');
 
   useEffect(() => {
     if (!eventId) return;
-    axiosInstance
-      .get<{ data: { name: string } }>(`/api/events/${eventId}`)
-      .then(res => setCurrentEventName((res.data as { data: { name: string } }).data?.name ?? ''))
+    eventService.getEventById(eventId)
+      .then(data => setCurrentEventName(data.name || ''))
       .catch(() => {});
   }, [eventId]);
 
   useEffect(() => {
-    if (!showEventPicker) return;
-    axiosInstance
-      .get<{ data: OngoingEvent[] }>('/api/events?status=Ongoing')
-      .then(res => setOngoingEvents((res.data as { data: OngoingEvent[] }).data ?? []))
+    // Luôn fetch nếu không có eventId (trang picker chính) 
+    // HOẶC nếu đang mở modal switcher
+    if (!showEventPicker && eventId) return;
+    
+    eventService.getAllEvents('Active')
+      .then(data => {
+        const liveEvents = data.filter(ev => getEventStatus(ev) === 'live');
+        setOngoingEvents(liveEvents);
+      })
       .catch(() => {});
-  }, [showEventPicker]);
+  }, [showEventPicker, eventId]);
 
   // React state only drives mount/unmount; physics runs via direct DOM updates
   const [items, setItems] = useState<PhysicsItem[]>([]);
@@ -175,6 +170,17 @@ export default function LedScreenPage() {
       className="fixed inset-0 bg-black overflow-hidden select-none"
       style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}
     >
+      <style>{`
+        @keyframes sparkle {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-sparkle {
+          background: linear-gradient(90deg, rgba(255,215,0,0) 0%, rgba(255,215,0,0.3) 50%, rgba(255,215,0,0) 100%);
+          background-size: 200% 100%;
+          animation: sparkle 3s infinite linear;
+        }
+      `}</style>
       {/* Header bar */}
       <div
         className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-8 border-b border-white/10 bg-black/70 backdrop-blur-sm"
@@ -184,19 +190,32 @@ export default function LedScreenPage() {
           <span className="text-2xl"></span>
           <span className="text-white/80 text-xl font-semibold tracking-wide">Wish Wall</span>
         </div>
-        <button
-          onClick={() => setShowEventPicker(true)}
-          className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors px-3 py-1 rounded-full border border-white/10 hover:border-white/30 max-w-[240px]"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-            <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-            <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-          </svg>
-          <span className="truncate">{currentEventName || 'Đổi sự kiện'}</span>
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-          <span className="text-teal-400 text-sm font-medium">LIVE</span>
+        {eventId && (
+          <button
+            onClick={() => setShowEventPicker(true)}
+            className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors px-3 py-1 rounded-full border border-white/10 hover:border-white/30 max-w-[240px]"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+              <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+            <span className="truncate">{currentEventName || 'Đổi sự kiện'}</span>
+          </button>
+        )}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+            <span className="text-teal-400 text-sm font-medium">LIVE</span>
+          </div>
+          <button
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            className="text-xs text-white/50 hover:text-white transition-colors border border-white/10 hover:border-white/30 px-3 py-1 rounded-full"
+          >
+            LOGOUT
+          </button>
         </div>
       </div>
 
@@ -246,8 +265,54 @@ export default function LedScreenPage() {
         </div>
       )}
 
-      {/* Empty state */}
-      {items.length === 0 && (
+      {/* Event picker screen (when no eventId in URL) */}
+      {!eventId && (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 mt-16 max-w-2xl mx-auto w-full">
+          <h1 className="text-3xl font-bold text-white mb-2 text-center">Màn hình LED Wishwall</h1>
+          <p className="text-white/40 mb-10 text-center">Chọn sự kiện đang diễn ra để bắt đầu hiển thị các lời chúc.</p>
+
+          {ongoingEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 bg-white/5 border border-white/10 rounded-3xl w-full">
+              <p className="text-6xl mb-4">📭</p>
+              <p className="text-white/30 italic">Không có sự kiện nào đang diễn ra.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 w-full">
+              {ongoingEvents.map(ev => (
+                <button
+                  key={ev.id}
+                  onClick={() => navigate(`/events/${ev.id}/wishwall/led`)}
+                  className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-teal-500 rounded-3xl p-6 transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white font-bold text-lg group-hover:text-teal-400 transition-colors uppercase tracking-wider">{ev.name}</h3>
+                      <div className="flex items-center gap-3 mt-2">
+                        {ev.location && (
+                          <div className="flex items-center gap-1.5 text-white/40 text-sm">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span>{ev.location}</span>
+                          </div>
+                        )}
+                        <span className="flex items-center gap-1.5 text-teal-400 text-xs font-bold uppercase tracking-widest">
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                          LIVE
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-teal-500/20 group-hover:text-teal-400 transition-all">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty state (when eventId exists but no messages yet) */}
+      {eventId && items.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full text-white/20">
           <p className="text-6xl mb-4"></p>
           <p className="text-xl">Waiting for messages…</p>
@@ -273,7 +338,6 @@ function MessageCard({
 }) {
   const glow = SENTIMENT_GLOW[item.sentiment] ?? 'shadow-white/10';
   const border = SENTIMENT_BORDER[item.sentiment] ?? 'border-white/20';
-  const sentimentText = SENTIMENT_TEXT[item.sentiment] ?? 'text-slate-300';
 
   const ref = useCallback(
     (el: HTMLDivElement | null) => {
@@ -283,24 +347,35 @@ function MessageCard({
     [item.key, cardElsRef],
   );
 
+  const isPositive = item.sentiment === 'Positive';
+  const isNeutral = item.sentiment === 'Neutral';
+
   return (
     <div
       ref={ref}
-      className={`absolute top-0 left-0 rounded-2xl border p-5 bg-white/5 backdrop-blur-sm shadow-2xl ${glow} ${border}`}
+      className={`absolute top-0 left-0 rounded-2xl border p-5 shadow-2xl ${glow} ${border} overflow-hidden`}
       style={{
         width: CARD_W,
         transform: `translate(${item.x}px, ${item.y}px)`,
         willChange: 'transform, opacity',
+        background: isPositive 
+          ? 'linear-gradient(135deg, #facc15, #fde047)' 
+          : isNeutral 
+            ? 'linear-gradient(135deg, #1e3a8a, #172554)' 
+            : 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: isPositive || isNeutral ? 'none' : 'blur(8px)',
       }}
     >
-      <p className="text-white text-lg leading-relaxed mb-3 font-light">{item.message}</p>
+      {isPositive && (
+        <div className="absolute inset-0 animate-sparkle pointer-events-none" />
+      )}
+      <p className={`relative z-10 text-lg leading-relaxed mb-3 font-bold ${isPositive ? 'text-[#b91c1c]' : isNeutral ? 'text-[#facc15]' : 'text-white'}`}>
+        {item.message}
+      </p>
 
-      <div className="flex items-center justify-between">
-        <span className="text-white/50 text-sm font-medium truncate max-w-[60%]">
+      <div className="relative z-10 flex items-center justify-between">
+        <span className={`text-sm font-bold truncate max-w-[90%] ${isPositive ? 'text-[#b91c1c]/80' : isNeutral ? 'text-[#facc15]/80' : 'text-white/70'}`}>
           — {item.userName}
-        </span>
-        <span className={`text-xs font-semibold uppercase tracking-wide ${sentimentText}`}>
-          {item.sentiment}
         </span>
       </div>
     </div>

@@ -1,55 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../lib/axios';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-import logoLinkieWhite from '../image/logo-linkie-white.png';
+import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
+
 import logoLinkie from '../image/Linkie.png';
+import logoLinkieWhite from '../image/logo-linkie-white.png';
+
 import bannerIntro from '../image/banner-intro.jpg';
 import bannerWishwall from '../image/banner-wishwall.jpg';
 import bannerCameraFrame from '../image/banner-CameraFrame.jpg';
-
-interface ApiEvent {
-  id: string;
-  name: string;
-  startTime: string;
-  status: 'Upcoming' | 'Ongoing' | 'Finished';
-}
-
-interface ApiResponse<T> {
-  statusCode: number;
-  message: string;
-  data: T;
-  responsedAt: string;
-}
-
-interface EventItem {
-  id: string;
-  name: string;
-  year: string;
-  image: string;
-  status: 'live' | 'upcoming';
-  month: number;
-  day: number;
-}
-
-const BANNER_IMAGES = [
-  'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=800&q=80',
-  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&w=800&q=80',
-  'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&w=800&q=80',
-];
-
-function mapApiEvent(e: ApiEvent, idx: number): EventItem {
-  const start = new Date(e.startTime);
-  return {
-    id: e.id,
-    name: e.name,
-    year: String(start.getFullYear()),
-    image: BANNER_IMAGES[idx % BANNER_IMAGES.length],
-    status: e.status === 'Ongoing' ? 'live' : 'upcoming',
-    month: start.getMonth() + 1,
-    day: start.getDate(),
-  };
-}
 
 const LKLogoCard = () => (
   <div className="w-[104px] h-[104px] bg-white rounded-[32px] flex items-center justify-center flex-shrink-0 shadow-lg p-3 border-3 border-[#00d5ff]">
@@ -63,16 +23,33 @@ const LKLogoCard = () => (
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [events, setEvents] = useState<EventItem[]>([]);
+  const { user } = useAuth();
+  const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axiosInstance
-      .get<ApiResponse<ApiEvent[]>>('/api/events')
-      .then(res => {
-        setEvents((res.data.data ?? []).map(mapApiEvent));
-      })
-      .catch(() => { /* silently ignore — UI shows empty state */ });
-  }, []);
+    if (user?.role === 'staff') {
+      navigate('/staff/wishwall', { replace: true });
+      return;
+    }
+    if (user?.role === 'led') {
+      navigate('/led', { replace: true });
+      return;
+    }
+
+    const fetchEvents = async () => {
+      try {
+        const data = await eventService.getAllEvents('Active');
+        const visibleEvents = data.filter(e => getEventStatus(e) !== 'past');
+        setEvents(visibleEvents);
+      } catch (err) {
+        console.error('Failed to fetch public events', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, [user, navigate]);
 
   return (
     <div className="bg-[#0a0a1a] min-h-screen text-white pb-20">
@@ -82,7 +59,7 @@ export default function HomePage() {
       <section className="relative h-[65vh] overflow-hidden">
         <img
           src={bannerIntro}
-          alt="Concert"
+          alt="Sự kiện"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a1a] via-black/20 to-black/40" />
@@ -146,18 +123,21 @@ export default function HomePage() {
 
       {/* ── WishWall Feature Banner ───────────────────── */}
       <section className="px-5 pb-2">
-        <div className="relative overflow-hidden rounded-3xl border border-[#00bcd4]/25">
+        <Link 
+          to="/events"
+          className="relative block overflow-hidden rounded-3xl border border-[#00bcd4]/25 hover:border-[#00bcd4]/50 transition-all active:scale-[0.98] cursor-pointer group"
+        >
           <img
             src={bannerWishwall}
-            alt="WishWall"
-            className="w-full h-72 object-cover"
+            alt="Wishwall"
+            className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
           <div className="absolute inset-0 p-5 flex flex-col justify-end">
-            <h3 className="text-4xl font-black text-white mb-1 tracking-wide">WISHWALL</h3>
-            <p className="text-xs text-gray-200 mb-5">Trở thành một phần của bữa tiệc âm nhạc</p>
+            <h3 className="text-4xl font-black text-white mb-1 tracking-wide uppercase">WISHWALL</h3>
+            <p className="text-xs text-gray-200 mb-5">Một phần không thể thiếu của sự kiện</p>
             <div className="flex gap-6">
-              {['Nhập tin nhắn', 'Bấm gửi', 'Hiển thị trên LED'].map((label, i) => (
+              {['Viết lời chúc', 'Gửi đi', 'Hiện trên LED'].map((label, i) => (
                 <div key={label} className="flex flex-col items-center gap-1.5">
                   <div className="w-10 h-10 rounded-full border-[2.5px] border-[#00e5ff] bg-[#00e5ff]/20 flex items-center justify-center">
                     <span className="text-white text-sm font-bold">{i + 1}</span>
@@ -169,27 +149,30 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-        </div>
+        </Link>
       </section>
 
       {/* ── Camera Frame Feature Banner ───────────────── */}
       <section className="px-5 pb-2">
-        <div className="relative overflow-hidden rounded-3xl border border-[#00bcd4]/25">
+        <Link 
+          to="/events"
+          className="relative block overflow-hidden rounded-3xl border border-[#00bcd4]/25 hover:border-[#00bcd4]/50 transition-all active:scale-[0.98] cursor-pointer group"
+        >
           <img
             src={bannerCameraFrame}
             alt="Camera Frame"
-            className="w-full h-72 object-cover"
+            className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
 
           <div className="absolute inset-0 p-5 flex flex-col justify-end">
-            <h3 className="text-4xl font-black text-white mb-1 tracking-wide">CAMERA FRAME</h3>
+            <h3 className="text-4xl font-black text-white mb-1 tracking-wide">Camera AR</h3>
             <p className="text-xs text-gray-200 mb-5">
-              Lưu giữ khoảnh khắc cùng Frame độc quyền
+              Lưu giữ khoảnh khắc cùng AR Frame độc quyền
             </p>
 
             <div className="flex gap-6">
-              {['Chọn Frame', 'Chụp ảnh', 'Lưu và chia sẻ'].map((label, i) => (
+              {['Chọn AR Frame', 'Chụp ảnh', 'Lưu & Chia sẻ'].map((label, i) => (
                 <div key={label} className="flex flex-col items-center gap-1.5">
                   <div className="w-10 h-10 rounded-full border-[2.5px] border-[#00e5ff] bg-[#00e5ff]/20 flex items-center justify-center">
                     <span className="text-white text-sm font-bold">{i + 1}</span>
@@ -201,7 +184,7 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-        </div>
+        </Link>
       </section>
 
       {/* ── Events ───────────────────────────────────── */}
@@ -209,56 +192,69 @@ export default function HomePage() {
         <h2 className="text-center text-xl font-bold mb-5">Hôm nay có gì?</h2>
 
         <div className="flex flex-col gap-4">
-          {events.map((event) => (
-            <div key={event.id} className="block">
-              <div
-                className={`relative rounded-2xl overflow-hidden border transition-colors ${
-                  event.status === 'live'
-                    ? 'border-[#00bcd4]/40 hover:border-[#00bcd4]/80 cursor-pointer'
-                    : 'border-white/10 opacity-70 cursor-not-allowed'
-                }`}
-                onClick={() => event.status === 'live' && navigate(`/events/${event.id}`)}
-              >
-                {/* Status badge */}
-                <div className="absolute top-3 left-3 z-10">
-                  {event.status === 'live' ? (
-                    <span className="flex items-center gap-1.5 bg-[#0a0a1a]/80 text-white text-xs px-3 py-1.5 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                      Đang diễn ra
-                    </span>
-                  ) : (
-                    <span className="bg-white/90 text-[#0a0a1a] text-xs px-3 py-1.5 rounded-full font-medium">
-                      Sắp diễn ra
-                    </span>
-                  )}
-                </div>
-
-                <img
-                  src={event.image}
-                  alt={event.name}
-                  className="w-full h-44 object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-
-                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-                  <div>
-                    <p className="text-white font-bold text-sm leading-tight">{event.name}</p>
-                    <p className="text-gray-400 text-xs">{event.year}</p>
-                  </div>
-                  <div className="bg-[#0a0a1a]/80 border border-white/20 rounded-xl px-3 py-2 text-center min-w-[52px]">
-                    <p className="text-white/60 text-[9px] uppercase">Tháng {event.month}</p>
-                    <p className="text-white text-2xl font-black leading-none">
-                      {String(event.day).padStart(2, '0')}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-10 opacity-50">
+              <div className="animate-spin w-8 h-8 border-4 border-[#00e5ff] border-t-transparent rounded-full" />
             </div>
-          ))}
+          ) : events.length === 0 ? (
+            <div className="text-center py-10 text-gray-400 text-sm">Hiện không có sự kiện nào đang hoạt động.</div>
+          ) : (
+            events.map((event) => {
+              const status = getEventStatus(event);
+              const startDate = new Date(event.startTime);
+              const fallbackImage = 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=800&q=80';
+
+              return (
+                <div key={event.id} className="block">
+                  <div
+                    className={`relative rounded-2xl overflow-hidden border transition-colors ${
+                      status === 'live'
+                        ? 'border-[#00bcd4]/40 hover:border-[#00bcd4]/80 cursor-pointer shadow-lg shadow-[#00e5ff]/5'
+                        : 'border-white/10 opacity-70 cursor-not-allowed'
+                    }`}
+                    onClick={() => status === 'live' && navigate(`/events/${event.id}`)}
+                  >
+                    {/* Status badge */}
+                    <div className="absolute top-3 left-3 z-10">
+                      {status === 'live' ? (
+                        <span className="flex items-center gap-1.5 bg-[#0a0a1a]/80 text-white text-xs px-3 py-1.5 rounded-full">
+                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                          Đang diễn ra
+                        </span>
+                      ) : (
+                        <span className="bg-white/90 text-[#0a0a1a] text-xs px-3 py-1.5 rounded-full font-medium">
+                          Sắp diễn ra
+                        </span>
+                      )}
+                    </div>
+
+                    <img
+                      src={event.thumbnailUrl || fallbackImage}
+                      alt={event.name}
+                      className="w-full h-44 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                    <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                      <div className="max-w-[70%]">
+                        <p className="text-white font-bold text-sm leading-tight uppercase truncate">{event.name}</p>
+                        <p className="text-gray-400 text-xs">{startDate.getFullYear()}</p>
+                      </div>
+                      <div className="bg-[#0a0a1a]/80 border border-white/20 rounded-xl px-3 py-2 text-center min-w-[52px]">
+                        <p className="text-white/60 text-[9px] uppercase">Tháng {startDate.getMonth() + 1}</p>
+                        <p className="text-white text-2xl font-black leading-none">
+                          {String(startDate.getDate()).padStart(2, '0')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────── */}
       <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
         <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
         <p className="text-gray-500 text-[10px] mt-0.5">
