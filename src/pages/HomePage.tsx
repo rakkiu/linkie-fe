@@ -52,7 +52,7 @@ export default function HomePage() {
   }, [user, navigate]);
 
   return (
-    <div className="bg-[#0a0a1a] min-h-screen text-white pb-20">
+    <div className="bg-[#0a0a1a] min-h-screen text-white">
       <Navbar />
 
       {/* ── Hero ─────────────────────────────────────── */}
@@ -123,7 +123,7 @@ export default function HomePage() {
 
       {/* ── WishWall Feature Banner ───────────────────── */}
       <section className="px-5 pb-2">
-        <Link 
+        <Link
           to="/events"
           className="relative block overflow-hidden rounded-3xl border border-[#00bcd4]/25 hover:border-[#00bcd4]/50 transition-all active:scale-[0.98] cursor-pointer group"
         >
@@ -154,7 +154,7 @@ export default function HomePage() {
 
       {/* ── Camera Frame Feature Banner ───────────────── */}
       <section className="px-5 pb-2">
-        <Link 
+        <Link
           to="/events"
           className="relative block overflow-hidden rounded-3xl border border-[#00bcd4]/25 hover:border-[#00bcd4]/50 transition-all active:scale-[0.98] cursor-pointer group"
         >
@@ -207,11 +207,10 @@ export default function HomePage() {
               return (
                 <div key={event.id} className="block">
                   <div
-                    className={`relative rounded-2xl overflow-hidden border transition-colors ${
-                      status === 'live'
+                    className={`relative rounded-2xl overflow-hidden border transition-colors ${status === 'live'
                         ? 'border-[#00bcd4]/40 hover:border-[#00bcd4]/80 cursor-pointer shadow-lg shadow-[#00e5ff]/5'
                         : 'border-white/10 opacity-70 cursor-not-allowed'
-                    }`}
+                      }`}
                     onClick={() => status === 'live' && navigate(`/events/${event.id}`)}
                   >
                     {/* Status badge */}
@@ -255,11 +254,139 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
-        <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
-        <p className="text-gray-500 text-[10px] mt-0.5">
-          Xóa nhòa khoảng cách giữa sân khấu và khán giả.
-        </p>
+      {/* ── Footer ───────────────────────────────────── */}
+      <footer className="bg-[#0a0a1a] border-t border-white/10 mt-6">
+        {/* Logo banner */}
+        <div className="mx-5 mt-6 mb-5 rounded-2xl bg-[#1a2540] px-5 py-4 flex flex-col items-center gap-1">
+          <img src={logoLinkie} alt="Linkie" className="h-8 w-auto" />
+          <p className="text-[11px] text-gray-400 text-center mt-1">
+            Xóa nhòa khoảng cách giữa sân khấu và khán giả.
+          </p>
+        </div>
+
+        {/* Content grid */}
+        <div className="mx-5 flex gap-5">
+          {/* Left: Contact */}
+          <div className="flex-1">
+            <p className="text-[11px] text-gray-400 mb-1">Bạn cần hỗ trợ</p>
+            <p className="text-xl font-black text-white tracking-tight mb-3">0943414905</p>
+            <p className="text-[11px] text-gray-400 mb-0.5">linkie.digital</p>
+            <p className="text-[11px] text-gray-400 mb-4">linkie.project@gmail.com</p>
+
+            {/* Social icons */}
+            <div className="flex gap-3">
+              {/* Facebook */}
+              <a
+                href="https://www.facebook.com/profile.php?id=61589933237493"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center active:scale-90 transition-transform"
+                aria-label="Facebook"
+              >
+                <svg viewBox="0 0 40 40" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="20" fill="#1877F2" />
+                  <path d="M25 13h-2.5c-.83 0-1 .67-1 1.17V16h3.5l-.5 4H21.5v11h-4V20H15v-4h2.5v-2.5C17.5 10.3 19.43 9 22 9c1.2 0 3 .09 3 .09V13z" fill="white" />
+                </svg>
+              </a>
+
+              {/* TikTok */}
+              <a
+                href="https://www.tiktok.com/@linkie.project"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center active:scale-90 transition-transform"
+                aria-label="TikTok"
+              >
+                <svg viewBox="0 0 40 40" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="20" fill="#010101" />
+                  <path d="M28 16.2a7.1 7.1 0 01-4.1-1.3v5.9a5.4 5.4 0 11-4.7-5.35v3a2.55 2.55 0 101.8 2.43V10h2.9a4.2 4.2 0 004.1 3.85v2.35z" fill="white" />
+                  <path d="M23.9 14.9a7.1 7.1 0 004.1 1.3" fill="#69C9D0" opacity="0.7" />
+                  <path d="M12 20.8a5.4 5.4 0 005.1 5.38" fill="#EE1D52" opacity="0.7" />
+                </svg>
+              </a>
+
+              {/* Gmail */}
+              <a
+                href="mailto:linkie.project@gmail.com"
+                className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center active:scale-90 transition-transform"
+                aria-label="Email"
+              >
+                <svg viewBox="0 0 40 40" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="20" fill="white" />
+                  <path d="M10 14.5v12A1.5 1.5 0 0011.5 28h3V19.5L20 24l5.5-4.5V28h3a1.5 1.5 0 001.5-1.5v-12c0-1.1-1.26-1.73-2.13-1.06L20 18l-7.87-5.56C11.26 11.77 10 12.4 10 13.5v1z" fill="#EA4335" />
+                  <path d="M11.5 13.44L20 19.5l8.5-6.06" fill="none" stroke="#FBBC05" strokeWidth="1" />
+                  <path d="M14.5 28V19.5" fill="none" stroke="#34A853" strokeWidth="1.5" />
+                  <path d="M25.5 28V19.5" fill="none" stroke="#4285F4" strokeWidth="1.5" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="w-px bg-white/15 self-stretch" />
+
+          {/* Right: Nav links */}
+          <div className="flex flex-col gap-5">
+            <div>
+              <p className="text-sm font-bold text-white mb-2">Hướng dẫn</p>
+              <ul className="flex flex-col gap-1.5">
+                <li>
+                  <button
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="text-[12px] text-gray-400 hover:text-white transition-colors"
+                  >
+                    Trang chủ
+                  </button>
+                </li>
+                <li>
+                  <Link to="/events" className="text-[12px] text-gray-400 hover:text-white transition-colors">
+                    Sự kiện
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="text-[12px] text-gray-400 hover:text-white transition-colors"
+                  >
+                    Về chúng tôi
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-sm font-bold text-white mb-2">Về Linkie</p>
+              <ul className="flex flex-col gap-1.5">
+                {['Tầm nhìn', 'Sứ mệnh'].map((label) => (
+                  <li key={label}>
+                    <button
+                      onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                      className="text-[12px] text-gray-400 hover:text-white transition-colors"
+                    >
+                      {label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="mx-5 mt-6 mb-5 pt-4 border-t border-white/10 flex flex-col gap-1.5">
+          <p className="text-[10px] text-gray-500">
+            Copyright © 2026 by Linkie. All rights reserved
+          </p>
+          <div className="flex gap-3">
+            <a href="#" className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors">
+              Điều khoản sử dụng
+            </a>
+            <span className="text-gray-600 text-[10px]">|</span>
+            <a href="#" className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors">
+              Chính sách bảo mật
+            </a>
+          </div>
+        </div>
       </footer>
     </div>
   );
