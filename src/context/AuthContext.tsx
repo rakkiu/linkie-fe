@@ -35,6 +35,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -178,8 +179,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authService.changePassword(currentPassword, newPassword);
   };
 
+  const verifyEmail = async (token: string) => {
+    await authService.verifyEmail(token);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, forgotPassword, resetPassword, changePassword }}>
+    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, forgotPassword, resetPassword, changePassword, verifyEmail }}>
       {children}
     </AuthContext.Provider>
   );

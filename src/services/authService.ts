@@ -77,5 +77,8 @@ export const authService = {
 
   changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
     await axios.post(`${BASE_URL}/Auth/changePassword`, { currentPassword, newPassword });
+  },
+
+  verifyEmail: async (token: string): Promise<void> => {
+    await axios.post(`${BASE_URL}/Auth/verify-email`, { token });
   }
-};
