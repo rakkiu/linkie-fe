@@ -81,4 +81,5 @@ export const authService = {
 
   verifyEmail: async (token: string): Promise<void> => {
     await axios.post(`${BASE_URL}/Auth/verify-email`, { token });
-  }
+  },
+};
