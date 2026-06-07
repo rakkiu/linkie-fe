@@ -69,6 +69,10 @@ export default function CaptureScreen({
         videoRef.current.onloadedmetadata = () => {
           setLoading(false);
         };
+        // Kích hoạt play để đảm bảo metadata được load trên một số trình duyệt
+        videoRef.current.play().catch((playErr) => {
+          console.warn('Video play integration error:', playErr);
+        });
       }
     } catch (err) {
       console.error('Camera capture error:', err);
@@ -260,40 +264,37 @@ export default function CaptureScreen({
     onZoomChange(parseFloat(e.target.value));
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center flex-1">
-        <div className="animate-spin w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full" />
-        <p className="text-gray-400 text-sm mt-4">Đang khởi động Camera...</p>
-      </div>
-    );
-  }
-
-  if (cameraError) {
-    return (
-      <div className="flex flex-col items-center justify-center flex-1 px-8 text-center">
-        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-            <circle cx="12" cy="13" r="4" />
-            <line x1="1" y1="1" x2="23" y2="23" />
-          </svg>
-        </div>
-        <p className="text-red-400 font-medium mb-4">{cameraError}</p>
-        <button
-          onClick={startCamera}
-          className="text-xs bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition-colors text-white"
-        >
-          Thử lại
-        </button>
-      </div>
-    );
-  }
-
   const meta = PHOTOBOOTH_LAYOUT_META[layout];
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden w-full max-w-md mx-auto relative pb-6">
+      {/* ── Màn hình Loading overlay ────────────────── */}
+      {loading && (
+        <div className="absolute inset-0 bg-[#0d1117] z-50 flex flex-col items-center justify-center">
+          <div className="animate-spin w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full" />
+          <p className="text-gray-400 text-sm mt-4">Đang khởi động Camera...</p>
+        </div>
+      )}
+
+      {/* ── Màn hình Lỗi overlay ────────────────── */}
+      {!loading && cameraError && (
+        <div className="absolute inset-0 bg-[#0d1117] z-50 flex flex-col items-center justify-center px-8 text-center">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </div>
+          <p className="text-red-400 font-medium mb-4">{cameraError}</p>
+          <button
+            onClick={startCamera}
+            className="text-xs bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition-colors text-white"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
       {/* ── Photo progress bar ─────────────────────── */}
       <div className="px-6 py-2 flex items-center justify-center gap-1.5 shrink-0">
         {Array.from({ length: requiredCount }).map((_, i) => {
