@@ -96,10 +96,10 @@ export default function CaptureScreen({
     };
   }, [startCamera]);
 
-  // ── Ghi Timelapse (Mỗi 1.5s lấy một frame nhỏ 540x960) ──────────────────────
+  // ── Ghi Timelapse (Mỗi 200ms lấy một frame nhỏ 540x960) ──────────────────────
   const recordTimelapseFrame = useCallback(() => {
     const video = videoRef.current;
-    if (!video || video.paused || video.ended || isCapturing || countdown !== null) return;
+    if (!video || video.paused || video.ended) return;
 
     const canvas = document.createElement('canvas');
     canvas.width = 540;
@@ -140,14 +140,14 @@ export default function CaptureScreen({
 
     ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
     onAddTimelapseFrame(canvas.toDataURL('image/jpeg', 0.6));
-  }, [isCapturing, countdown, isFrontCamera, zoomLevel, onAddTimelapseFrame]);
+  }, [isFrontCamera, zoomLevel, onAddTimelapseFrame]);
 
   useEffect(() => {
     if (loading || cameraError) return;
 
     timelapseTimerRef.current = window.setInterval(() => {
       recordTimelapseFrame();
-    }, 1500);
+    }, 200);
 
     return () => {
       if (timelapseTimerRef.current) {
