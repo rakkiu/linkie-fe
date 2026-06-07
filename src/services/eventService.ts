@@ -1,4 +1,4 @@
-import { apiClient, BASE_URL, ACCESS_TOKEN_KEY } from './apiClient';
+import { apiClient, BASE_URL, ACCESS_TOKEN_KEY, API_ORIGIN } from './apiClient';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ export interface ArFrame {
 export const ensureImageUrl = (url: string | null): string => {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('blob:')) return url;
-  const baseUrl = 'http://localhost:5002';
+  const baseUrl = API_ORIGIN;
   return url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
 };
 
