@@ -32,17 +32,27 @@ export default function CaptureScreen({
   const timelapseTimerRef = useRef<number | null>(null);
   const autoCaptureTimerRef = useRef<number | null>(null);
 
+  // Latest refs để tránh render loop làm reset timers/intervals
+  const capturePhotoRef = useRef<() => void>(() => {});
+  const recordTimelapseFrameRef = useRef<() => void>(() => {});
+  const startCountdownRef = useRef<() => void>(() => {});
+
   const [loading, setLoading] = useState(true);
   const [cameraError, setCameraError] = useState('');
   const [flashVisible, setFlashVisible] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [autoCapture, setAutoCapture] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [countdownDuration, setCountdownDuration] = useState(3);
+  const [flashEnabled, setFlashEnabled] = useState(false);
+  const [hasTorch, setHasTorch] = useState(false);
 
   // ── Khởi động Camera ────────────────────────────────────────────────────────
   const startCamera = useCallback(async () => {
     setLoading(true);
     setCameraError('');
+    setFlashEnabled(false);
+    setHasTorch(false);
 
     // Dừng stream cũ nếu có
     if (streamRef.current) {
@@ -62,6 +72,16 @@ export default function CaptureScreen({
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
+
+      try {
+        const track = stream.getVideoTracks()[0];
+        if (track && typeof track.getCapabilities === 'function') {
+          const capabilities = track.getCapabilities() as any;
+          setHasTorch(!!capabilities.torch);
+        }
+      } catch (e) {
+        setHasTorch(false);
+      }
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -142,11 +162,18 @@ export default function CaptureScreen({
     onAddTimelapseFrame(canvas.toDataURL('image/jpeg', 0.6));
   }, [isFrontCamera, zoomLevel, onAddTimelapseFrame]);
 
+  // Đồng bộ Latest Refs ở mỗi lần render để tránh reset timer/interval
+  useEffect(() => {
+    capturePhotoRef.current = capturePhoto;
+    recordTimelapseFrameRef.current = recordTimelapseFrame;
+    startCountdownRef.current = startCountdown;
+  });
+
   useEffect(() => {
     if (loading || cameraError) return;
 
     timelapseTimerRef.current = window.setInterval(() => {
-      recordTimelapseFrame();
+      recordTimelapseFrameRef.current();
     }, 200);
 
     return () => {
@@ -155,7 +182,7 @@ export default function CaptureScreen({
         timelapseTimerRef.current = null;
       }
     };
-  }, [loading, cameraError, recordTimelapseFrame]);
+  }, [loading, cameraError]);
 
   // ── Chụp ảnh chính ──────────────────────────────────────────────────────────
   const capturePhoto = useCallback(() => {
@@ -210,15 +237,15 @@ export default function CaptureScreen({
   // ── Xử lý đếm ngược (Countdown) ─────────────────────────────────────────────
   const startCountdown = useCallback(() => {
     if (isCapturing || countdown !== null) return;
-    setCountdown(3);
-  }, [isCapturing, countdown]);
+    setCountdown(countdownDuration);
+  }, [isCapturing, countdown, countdownDuration]);
 
   useEffect(() => {
     if (countdown === null) return;
 
     if (countdown === 0) {
       setCountdown(null);
-      capturePhoto();
+      capturePhotoRef.current();
       return;
     }
 
@@ -227,7 +254,7 @@ export default function CaptureScreen({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [countdown, capturePhoto]);
+  }, [countdown]);
 
   // ── Tự động chụp (Auto Capture) tiếp theo ──────────────────────────────────
   useEffect(() => {
@@ -243,7 +270,7 @@ export default function CaptureScreen({
     // Nếu đang ở chế độ tự động chụp, và vừa chụp xong 1 tấm (và chưa đủ số lượng)
     if (autoCapture && capturedPhotos.length > 0 && !isCapturing && countdown === null) {
       autoCaptureTimerRef.current = window.setTimeout(() => {
-        startCountdown();
+        startCountdownRef.current();
       }, 3000); // 3 giây chuẩn bị cho lần chụp tiếp theo
     }
 
@@ -252,11 +279,30 @@ export default function CaptureScreen({
         window.clearTimeout(autoCaptureTimerRef.current);
       }
     };
-  }, [capturedPhotos.length, requiredCount, autoCapture, isCapturing, countdown, startCountdown, onComplete]);
+  }, [capturedPhotos.length, requiredCount, autoCapture, isCapturing, countdown, onComplete]);
 
   // ── Đổi camera ──────────────────────────────────────────────────────────────
   const toggleCamera = () => {
     onToggleFrontCamera(!isFrontCamera);
+  };
+
+  // ── Bật tắt đèn flash (torch) camera sau ────────────────────────────────────
+  const toggleFlash = async () => {
+    const nextState = !flashEnabled;
+    setFlashEnabled(nextState);
+
+    if (streamRef.current) {
+      const track = streamRef.current.getVideoTracks()[0];
+      if (track && typeof track.applyConstraints === 'function') {
+        try {
+          await track.applyConstraints({
+            advanced: [{ torch: nextState } as any],
+          });
+        } catch (err) {
+          console.warn('Failed to toggle torch:', err);
+        }
+      }
+    }
   };
 
   // ── Zoom control slider ─────────────────────────────────────────────────────
@@ -349,10 +395,40 @@ export default function CaptureScreen({
           </span>
         </div>
 
+        {/* Flash Toggle Button (top left, below layout label) */}
+        {!isFrontCamera && hasTorch && (
+          <button
+            onClick={toggleFlash}
+            className={`absolute top-14 left-4 z-30 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 ${
+              flashEnabled
+                ? 'bg-amber-500/20 border-amber-500 text-amber-500 shadow-lg shadow-amber-500/20'
+                : 'bg-black/40 border-white/10 text-white/60 hover:text-white'
+            }`}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill={flashEnabled ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+          </button>
+        )}
+
         {/* Timelapse Recording indicator (top right) */}
         <div className="absolute top-4 right-4 z-10 bg-red-500/80 backdrop-blur-md px-3 py-1 rounded-full pointer-events-none flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
           <span className="text-[9px] text-white font-bold tracking-widest">REC</span>
+        </div>
+
+        {/* Photo counter overlay (top center) */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full pointer-events-none">
+          <span className="text-[9px] text-pink-400 font-extrabold uppercase tracking-widest whitespace-nowrap">
+            Tấm {Math.min(capturedPhotos.length + 1, requiredCount)} / {requiredCount}
+          </span>
         </div>
 
         {/* Software Zoom Slider (bottom center) */}
@@ -373,8 +449,28 @@ export default function CaptureScreen({
         </div>
       </div>
 
+      {/* ── Bộ chọn giây đếm ngược ──────────────────── */}
+      <div className="px-6 pt-3 pb-0 shrink-0 flex items-center justify-center gap-3">
+        <span className="text-[10px] font-black uppercase text-white/40 tracking-wider">Hẹn giờ:</span>
+        <div className="flex bg-white/5 border border-white/10 rounded-full p-0.5 gap-0.5">
+          {[3, 5, 10, 15].map((sec) => (
+            <button
+              key={sec}
+              onClick={() => setCountdownDuration(sec)}
+              className={`px-3 py-1 rounded-full text-[9px] font-bold transition-all ${
+                countdownDuration === sec
+                  ? 'bg-pink-500 text-white shadow-md shadow-pink-500/25'
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              {sec}s
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── Nút điều khiển ──────────────────────────── */}
-      <div className="px-6 pt-5 pb-2 shrink-0 flex items-center justify-between gap-4">
+      <div className="px-6 pt-2 pb-2 shrink-0 flex items-center justify-between gap-4">
         {/* Left: Tự động chụp */}
         <button
           onClick={() => {
