@@ -162,20 +162,13 @@ export default function CaptureScreen({
       ctx.scale(-1, 1);
     }
 
-    if (zoomLevel >= 1.0) {
-      const clipW = sW / zoomLevel;
-      const clipH = sH / zoomLevel;
-      const clipX = sx + (sW - clipW) / 2;
-      const clipY = sy + (sH - clipH) / 2;
-      ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
-    } else {
-      // Khi zoom < 1.0 (zoom out), ta vẽ toàn bộ nguồn nhưng thu nhỏ ở trung tâm canvas đích
-      const targetW = canvas.width * zoomLevel;
-      const targetH = canvas.height * zoomLevel;
-      const targetX = (canvas.width - targetW) / 2;
-      const targetY = (canvas.height - targetH) / 2;
-      ctx.drawImage(video, sx, sy, sW, sH, targetX, targetY, targetW, targetH);
-    }
+    // Luôn vẽ đầy canvas lấp đầy khung hình, không bị viền đen khi zoom < 1.0
+    const activeZoom = Math.max(1.0, zoomLevel);
+    const clipW = sW / activeZoom;
+    const clipH = sH / activeZoom;
+    const clipX = sx + (sW - clipW) / 2;
+    const clipY = sy + (sH - clipH) / 2;
+    ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
     onAddTimelapseFrame(canvas.toDataURL('image/jpeg', 0.6));
   }, [isFrontCamera, zoomLevel, onAddTimelapseFrame]);
 
@@ -238,20 +231,13 @@ export default function CaptureScreen({
       sy = (vH - sH) / 2;
     }
 
-    if (zoomLevel >= 1.0) {
-      const clipW = sW / zoomLevel;
-      const clipH = sH / zoomLevel;
-      const clipX = sx + (sW - clipW) / 2;
-      const clipY = sy + (sH - clipH) / 2;
-      ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
-    } else {
-      // Khi zoom < 1.0, ta vẽ toàn bộ nguồn nhưng thu nhỏ ở trung tâm canvas đích
-      const targetW = canvas.width * zoomLevel;
-      const targetH = canvas.height * zoomLevel;
-      const targetX = (canvas.width - targetW) / 2;
-      const targetY = (canvas.height - targetH) / 2;
-      ctx.drawImage(video, sx, sy, sW, sH, targetX, targetY, targetW, targetH);
-    }
+    // Luôn vẽ đầy canvas lấp đầy khung hình, không bị viền đen khi zoom < 1.0
+    const activeZoom = Math.max(1.0, zoomLevel);
+    const clipW = sW / activeZoom;
+    const clipH = sH / activeZoom;
+    const clipX = sx + (sW - clipW) / 2;
+    const clipY = sy + (sH - clipH) / 2;
+    ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
     const photoDataUrl = canvas.toDataURL('image/jpeg', 0.95);
     onAddPhoto(photoDataUrl);
 
@@ -473,7 +459,7 @@ export default function CaptureScreen({
           muted
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-100"
           style={{
-            transform: `${isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)'} scale(${zoomLevel})`,
+            transform: `${isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)'} scale(${Math.max(1.0, zoomLevel)})`,
           }}
         />
 
