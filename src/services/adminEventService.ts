@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { apiClient, API_ORIGIN } from './apiClient';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ export const ensureImageUrl = (url: string | null): string => {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('blob:')) return url;
   // If it's a relative path (e.g. /uploads/...), prepend server URL
-  const baseUrl = 'http://localhost:5002';
+  const baseUrl = API_ORIGIN;
   return url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
 };
 

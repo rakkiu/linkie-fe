@@ -17,6 +17,14 @@ const WishwallIcon = () => (
   </svg>
 );
 
+const PhotoboothIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d946ef" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="12" y1="3" x2="12" y2="21" />
+  </svg>
+);
+
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -98,6 +106,26 @@ export default function EventDetailPage() {
           </div>
         </Link>
 
+        {/* Photobooth */}
+        <Link
+          to={`/events/${id}/photobooth`}
+          className="flex flex-col items-center justify-center rounded-[40px] h-64 gap-4 px-6
+            bg-gradient-to-br from-[#d946ef] to-[#8b5cf6]
+            hover:brightness-105 active:scale-[0.98] transition-all border border-white/10"
+        >
+          <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-4">
+            <div className="bg-white rounded-xl p-2.5">
+              <PhotoboothIcon />
+            </div>
+          </div>
+          <div className="text-center">
+            <p className="text-white font-black text-xl tracking-wide uppercase">Photobooth</p>
+            <p className="text-white/90 text-[13px] mt-1 font-medium leading-tight">
+              Tạo ảnh ghép phong cách cùng nhiều sticker dễ thương
+            </p>
+          </div>
+        </Link>
+
         {/* Wishwall */}
         <Link
           to={`/events/${id}/wishwall`}
@@ -123,7 +151,7 @@ export default function EventDetailPage() {
       <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
         <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
         <p className="text-gray-500 text-[10px] mt-0.5">
-          Xóa nhòa khoảng cách giữa sân khấu và khán giả.
+            
         </p>
       </footer>
     </div>

@@ -1,0 +1,271 @@
+export type PhotoboothLayout = 'strip1x4' | 'grid2x2' | 'grid2x4';
+
+export type StickerCategory = 'emoji' | 'decorative' | 'text';
+
+export interface StickerItem {
+  id: string;
+  content: string;
+  category: StickerCategory;
+  position: { x: number; y: number }; // normalized 0.0 to 1.0
+  scale: number;
+  rotation: number; // radians
+  baseFontSize: number;
+  textColor?: string;
+}
+
+export const PHOTOBOOTH_LAYOUT_META = {
+  strip1x4: {
+    photoCount: 4,
+    label: '1×4 Strip',
+    icon: '📋'
+  },
+  grid2x2: {
+    photoCount: 4,
+    label: '2×2 Grid',
+    icon: '⊞'
+  },
+  grid2x4: {
+    photoCount: 8,
+    label: '2×4 Grid',
+    icon: '▦'
+  }
+};
+
+export class PhotoboothCompositor {
+  static readonly canvasWidth = 1080;
+  static readonly canvasHeight = 1920;
+  private static readonly gap = 20.0;
+  private static readonly padding = 24.0;
+  private static readonly cornerRadius = 16.0;
+
+  /** Helper load an image from URL / Base64 */
+  static loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = (err) => reject(err);
+      img.src = src;
+    });
+  }
+
+  /** Main composite function using HTML5 Canvas */
+  static async compositePhotobooth({
+    photos,
+    layout,
+    frameOverlayUrl,
+    stickers = [],
+    isFrontCamera = true,
+  }: {
+    photos: string[]; // base64 or blob URLs
+    layout: PhotoboothLayout;
+    frameOverlayUrl?: string | null;
+    stickers?: StickerItem[];
+    isFrontCamera?: boolean;
+  }): Promise<string> {
+    const canvas = document.createElement('canvas');
+    canvas.width = this.canvasWidth;
+    canvas.height = this.canvasHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Cannot get 2D context');
+
+    // 1. Draw gradient background
+    this.drawBackground(ctx);
+
+    // 2. Decode photos and draw in cells
+    const cellRects = this.getCellRects(layout);
+    for (let i = 0; i < cellRects.length && i < photos.length; i++) {
+      try {
+        const img = await this.loadImage(photos[i]);
+        this.drawPhotoInCell(ctx, img, cellRects[i], isFrontCamera);
+      } catch (err) {
+        console.error('Failed to load photo for compositing:', err);
+      }
+    }
+
+    // 3. Draw AR Frame overlay
+    if (frameOverlayUrl) {
+      try {
+        const frameImg = await this.loadImage(frameOverlayUrl);
+        ctx.drawImage(frameImg, 0, 0, this.canvasWidth, this.canvasHeight);
+      } catch (err) {
+        console.error('Failed to load frame overlay for compositing:', err);
+      }
+    }
+
+    // 4. Draw stickers
+    for (const sticker of stickers) {
+      this.drawSticker(ctx, sticker);
+    }
+
+    // 5. Output as data URL
+    return canvas.toDataURL('image/jpeg', 0.92);
+  }
+
+  /** Draw gradient background */
+  private static drawBackground(ctx: CanvasRenderingContext2D) {
+    const grad = ctx.createLinearGradient(0, 0, 0, this.canvasHeight);
+    grad.addColorStop(0, '#0D1117');
+    grad.addColorStop(0.5, '#161B22');
+    grad.addColorStop(1, '#0D1117');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+  }
+
+  /** Calculate cell rectangle bounds based on layout */
+  private static getCellRects(layout: PhotoboothLayout): { x: number; y: number; w: number; h: number }[] {
+    const rects: { x: number; y: number; w: number; h: number }[] = [];
+    const W = this.canvasWidth;
+    const H = this.canvasHeight;
+    const padding = this.padding;
+    const gap = this.gap;
+
+    if (layout === 'strip1x4') {
+      const cellW = W - padding * 2;
+      const totalGaps = gap * 3;
+      const cellH = (H - padding * 2 - totalGaps) / 4;
+      for (let row = 0; row < 4; row++) {
+        const y = padding + row * (cellH + gap);
+        rects.push({ x: padding, y, w: cellW, h: cellH });
+      }
+    } else if (layout === 'grid2x2') {
+      const cellW = (W - padding * 2 - gap) / 2;
+      const cellH = (H - padding * 2 - gap) / 2;
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 2; col++) {
+          const x = padding + col * (cellW + gap);
+          const y = padding + row * (cellH + gap);
+          rects.push({ x, y, w: cellW, h: cellH });
+        }
+      }
+    } else if (layout === 'grid2x4') {
+      const cellW = (W - padding * 2 - gap) / 2;
+      const totalGaps = gap * 3;
+      const cellH = (H - padding * 2 - totalGaps) / 4;
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 2; col++) {
+          const x = padding + col * (cellW + gap);
+          const y = padding + row * (cellH + gap);
+          rects.push({ x, y, w: cellW, h: cellH });
+        }
+      }
+    }
+    return rects;
+  }
+
+  /** Draw a single image into a layout cell with cover fit, border radius, border and flip option */
+  private static drawPhotoInCell(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    cell: { x: number; y: number; w: number; h: number },
+    flipHorizontal: boolean
+  ) {
+    ctx.save();
+
+    // 1) Clip rounded rectangle path
+    ctx.beginPath();
+    ctx.roundRect(cell.x, cell.y, cell.w, cell.h, this.cornerRadius);
+    ctx.clip();
+
+    // 2) Calculate cover fit (crop to fill)
+    const imgAspect = img.width / img.height;
+    const cellAspect = cell.w / cell.h;
+
+    let sx = 0, sy = 0, sw = img.width, sh = img.height;
+    if (imgAspect > cellAspect) {
+      // Image is wider than cell - crop horizontal sides
+      sw = img.height * cellAspect;
+      sx = (img.width - sw) / 2;
+    } else {
+      // Image is taller than cell - crop vertical top/bottom
+      sh = img.width / cellAspect;
+      sy = (img.height - sh) / 2;
+    }
+
+    // 3) Draw and flip if front camera
+    if (flipHorizontal) {
+      ctx.translate(cell.x + cell.w, cell.y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cell.w, cell.h);
+    } else {
+      ctx.drawImage(img, sx, sy, sw, sh, cell.x, cell.y, cell.w, cell.h);
+    }
+
+    ctx.restore();
+
+    // 4) Draw subtle white-translucent border
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(cell.x, cell.y, cell.w, cell.h, this.cornerRadius);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** Draw sticker on canvas */
+  private static drawSticker(ctx: CanvasRenderingContext2D, sticker: StickerItem) {
+    ctx.save();
+
+    // Map normalized coordinates (0..1) to actual canvas size
+    const dx = sticker.position.x * this.canvasWidth;
+    const dy = sticker.position.y * this.canvasHeight;
+
+    ctx.translate(dx, dy);
+    ctx.rotate(sticker.rotation);
+    ctx.scale(sticker.scale, sticker.scale);
+
+    // Font size is scaled up because canvas is 1080x1920
+    const fontSize = sticker.baseFontSize * 2;
+
+    if (sticker.category === 'text') {
+      this.drawTextSticker(ctx, sticker, fontSize);
+    } else {
+      // Draw Emoji sticker
+      ctx.font = `${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(sticker.content, 0, 0);
+    }
+
+    ctx.restore();
+  }
+
+  /** Draw styled text sticker with background pill and shadow glow */
+  private static drawTextSticker(ctx: CanvasRenderingContext2D, sticker: StickerItem, fontSize: number) {
+    ctx.font = `black 900 ${fontSize}px "Outfit", "Inter", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const text = sticker.content;
+    const textMetrics = ctx.measureText(text);
+    
+    // Approximate height since textMetrics.actualBoundingBoxAscent can be noisy
+    const textHeight = fontSize * 0.8;
+    const textWidth = textMetrics.width;
+
+    const bgW = textWidth + 40;
+    const bgH = textHeight + 24;
+
+    ctx.save();
+
+    // Shadow glow
+    const pillColor = sticker.textColor || '#E91E8C';
+    ctx.shadowColor = pillColor;
+    ctx.shadowBlur = 24;
+
+    // Draw background pill
+    ctx.beginPath();
+    ctx.roundRect(-bgW / 2, -bgH / 2, bgW, bgH, 24);
+    ctx.fillStyle = pillColor;
+    ctx.fill();
+
+    ctx.restore();
+
+    // Draw bold white text on top
+    ctx.fillStyle = '#ffffff';
+    // Offset slightly for text vertical alignment alignment
+    ctx.fillText(text, 0, fontSize * 0.05);
+  }
+}

@@ -15,6 +15,8 @@ import AdminEventsListPage from './pages/admin/AdminEventsListPage';
 import WishwallModerationPage from './pages/WishwallModerationPage';
 import LedScreenPage from './pages/LedScreenPage';
 import EventsPage from './pages/EventsPage';
+import PhotoboothPage from './pages/photobooth/PhotoboothPage';
+
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -72,6 +74,9 @@ function App() {
           <Route path="/events/:id" element={<AttendeeRoute allowGuest><EventDetailPage /></AttendeeRoute>} />
           <Route path="/events/:id/camera-frame" element={
             <AttendeeRoute><CameraFramePage /></AttendeeRoute>
+          } />
+          <Route path="/events/:id/photobooth" element={
+            <AttendeeRoute><PhotoboothPage /></AttendeeRoute>
           } />
           <Route path="/events/:id/wishwall" element={
             <AttendeeRoute><WishwallPage /></AttendeeRoute>

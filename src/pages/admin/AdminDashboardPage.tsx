@@ -354,7 +354,7 @@ export default function AdminDashboardPage() {
           </div>
           
           <div style={{ color: '#444', fontSize: '11px', textAlign: 'right', marginTop: '10px', fontStyle: 'italic' }}>
-            Dữ liệu tự động cập nhật mỗi 30s • Máy chủ: http://localhost:5002
+            Dữ liệu tự động cập nhật mỗi 30s • Máy chủ: {import.meta.env.VITE_API_URL || 'https://linkie-be.onrender.com'}
           </div>
         </>
       )}
