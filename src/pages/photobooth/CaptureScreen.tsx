@@ -37,6 +37,10 @@ export default function CaptureScreen({
   const recordTimelapseFrameRef = useRef<() => void>(() => {});
   const startCountdownRef = useRef<() => void>(() => {});
 
+  // Refs cho cử chỉ zoom bằng hai ngón tay (Pinch to zoom)
+  const touchStartDistRef = useRef(0);
+  const touchStartZoomRef = useRef(1.0);
+
   const [loading, setLoading] = useState(true);
   const [cameraError, setCameraError] = useState('');
   const [flashVisible, setFlashVisible] = useState(false);
@@ -158,7 +162,20 @@ export default function CaptureScreen({
       ctx.scale(-1, 1);
     }
 
-    ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
+    if (zoomLevel >= 1.0) {
+      const clipW = sW / zoomLevel;
+      const clipH = sH / zoomLevel;
+      const clipX = sx + (sW - clipW) / 2;
+      const clipY = sy + (sH - clipH) / 2;
+      ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
+    } else {
+      // Khi zoom < 1.0 (zoom out), ta vẽ toàn bộ nguồn nhưng thu nhỏ ở trung tâm canvas đích
+      const targetW = canvas.width * zoomLevel;
+      const targetH = canvas.height * zoomLevel;
+      const targetX = (canvas.width - targetW) / 2;
+      const targetY = (canvas.height - targetH) / 2;
+      ctx.drawImage(video, sx, sy, sW, sH, targetX, targetY, targetW, targetH);
+    }
     onAddTimelapseFrame(canvas.toDataURL('image/jpeg', 0.6));
   }, [isFrontCamera, zoomLevel, onAddTimelapseFrame]);
 
@@ -221,13 +238,20 @@ export default function CaptureScreen({
       sy = (vH - sH) / 2;
     }
 
-    // Áp dụng software zoom
-    const clipW = sW / zoomLevel;
-    const clipH = sH / zoomLevel;
-    const clipX = sx + (sW - clipW) / 2;
-    const clipY = sy + (sH - clipH) / 2;
-
-    ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
+    if (zoomLevel >= 1.0) {
+      const clipW = sW / zoomLevel;
+      const clipH = sH / zoomLevel;
+      const clipX = sx + (sW - clipW) / 2;
+      const clipY = sy + (sH - clipH) / 2;
+      ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
+    } else {
+      // Khi zoom < 1.0, ta vẽ toàn bộ nguồn nhưng thu nhỏ ở trung tâm canvas đích
+      const targetW = canvas.width * zoomLevel;
+      const targetH = canvas.height * zoomLevel;
+      const targetX = (canvas.width - targetW) / 2;
+      const targetY = (canvas.height - targetH) / 2;
+      ctx.drawImage(video, sx, sy, sW, sH, targetX, targetY, targetW, targetH);
+    }
     const photoDataUrl = canvas.toDataURL('image/jpeg', 0.95);
     onAddPhoto(photoDataUrl);
 
@@ -310,6 +334,36 @@ export default function CaptureScreen({
     onZoomChange(parseFloat(e.target.value));
   };
 
+  // ── Xử lý cử chỉ vuốt 2 ngón tay thu phóng (Pinch to Zoom) ───────────────────
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartDistRef.current = dist;
+      touchStartZoomRef.current = zoomLevel;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && touchStartDistRef.current > 0) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / touchStartDistRef.current;
+      let newZoom = touchStartZoomRef.current * factor;
+      // Giới hạn zoom từ 0.5 đến 3.0
+      newZoom = Math.max(0.5, Math.min(3.0, newZoom));
+      onZoomChange(parseFloat(newZoom.toFixed(2)));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartDistRef.current = 0;
+  };
+
   const meta = PHOTOBOOTH_LAYOUT_META[layout];
 
   return (
@@ -362,7 +416,13 @@ export default function CaptureScreen({
       </div>
 
       {/* ── Viewfinder ─────────────────────────────── */}
-      <div className="flex-1 mx-4 mt-2 rounded-3xl overflow-hidden bg-black relative border border-white/5 shadow-2xl shadow-pink-500/5 flex items-center justify-center">
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        className="flex-1 mx-4 mt-2 rounded-3xl overflow-hidden bg-black relative border border-white/5 shadow-2xl shadow-pink-500/5 flex items-center justify-center"
+      >
         <video
           ref={videoRef}
           autoPlay
@@ -433,10 +493,10 @@ export default function CaptureScreen({
 
         {/* Software Zoom Slider (bottom center) */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-black/50 backdrop-blur-md border border-white/10 px-4 py-2 rounded-2xl flex items-center gap-3 w-4/5 max-w-[280px]">
-          <span className="text-[9px] font-bold text-white/60">1x</span>
+          <span className="text-[9px] font-bold text-white/60">0.5x</span>
           <input
             type="range"
-            min="1.0"
+            min="0.5"
             max="3.0"
             step="0.1"
             value={zoomLevel}
