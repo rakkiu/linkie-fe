@@ -12,6 +12,8 @@ import AdminFanInsightsPage from './pages/admin/AdminFanInsightsPage';
 import AdminReportPage from './pages/admin/AdminReportPage';
 import AdminCreateEventPage from './pages/admin/AdminCreateEventPage';
 import AdminEventsListPage from './pages/admin/AdminEventsListPage';
+import TicketListPage from './pages/admin/TicketListPage';
+import TicketImportPage from './pages/admin/TicketImportPage';
 import WishwallModerationPage from './pages/WishwallModerationPage';
 import LedScreenPage from './pages/LedScreenPage';
 import EventsPage from './pages/EventsPage';
@@ -124,6 +126,16 @@ function App() {
           <Route path="/admin/events" element={
             <AdminRoute>
               <AdminEventsListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/tickets" element={
+            <AdminRoute>
+              <TicketListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/tickets/import" element={
+            <AdminRoute>
+              <TicketImportPage />
             </AdminRoute>
           } />
         </Routes>
