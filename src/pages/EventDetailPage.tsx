@@ -2,6 +2,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useEffect, useState } from 'react';
 import { eventService, type PublicEvent } from '../services/eventService';
+import { useTicketVerification } from '../hooks/useTicketVerification';
 import logoLinkie from '../image/Linkie.png';
 
 const CameraIcon = () => (
@@ -28,6 +29,8 @@ const PhotoboothIcon = () => (
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { ticketStatus, loading: ticketLoading } = useTicketVerification(id)
+
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,6 +86,25 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Ticket status badge ────────────────────── */}
+      {!ticketLoading && ticketStatus && (
+        <div className="px-6 pb-2">
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold ${
+            ticketStatus.hasValidTicket
+              ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+              : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              ticketStatus.hasValidTicket ? 'bg-green-400 shadow-[0_0_6px_#4ade80]' : 'bg-yellow-400 shadow-[0_0_6px_#facc15]'
+            }`} />
+            {ticketStatus.hasValidTicket
+              ? `✓ BẠN CÓ VÉ — ${ticketStatus.ticketCode || ''}`
+              : 'BẠN CHƯA CÓ VÉ CHO SỰ KIỆN NÀY'
+            }
+          </div>
+        </div>
+      )}
 
       {/* ── Feature cards ──────────────────────────── */}
       <div className="flex flex-col gap-6 px-6 pt-2 flex-1 mb-32">
