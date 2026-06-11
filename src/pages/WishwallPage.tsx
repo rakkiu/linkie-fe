@@ -19,7 +19,6 @@ export default function WishwallPage() {
   const navigate = useNavigate();
   const { ticketStatus, loading: ticketLoading } = useTicketVerification(id);
 
-  const { ticketStatus, loading: ticketLoading } = useTicketVerification(id)
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');

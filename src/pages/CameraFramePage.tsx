@@ -32,8 +32,6 @@ export default function CameraFramePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const { ticketStatus, loading: ticketLoading } = useTicketVerification(id)
-
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [frames, setFrames] = useState<ArFrame[]>([]);
   const [selectedFrameIdx, setSelectedFrameIdx] = useState(0);
