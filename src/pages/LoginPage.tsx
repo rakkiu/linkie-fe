@@ -65,7 +65,7 @@ export default function LoginPage() {
 
         {/* Back button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="w-full border border-[#00bcd4] text-white font-bold tracking-widest text-sm py-3 rounded-full hover:bg-[#00bcd4]/10 active:scale-[0.98] transition-all mb-4"
         >
           QUAY LẠI
