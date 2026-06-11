@@ -7,6 +7,7 @@ export interface TicketCheckResult {
   ticketCode?: string
   ticketStatus?: string
   message?: string
+  requiresTicket?: boolean
 }
 
 export interface ImportTicketsResponse {
