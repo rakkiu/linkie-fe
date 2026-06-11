@@ -162,8 +162,8 @@ export default function CaptureScreen({
       ctx.scale(-1, 1);
     }
 
-    // Luôn vẽ đầy canvas lấp đầy khung hình, không bị viền đen khi zoom < 1.0
-    const activeZoom = Math.max(1.0, zoomLevel);
+    // zoom < 1.0 sẽ lấy vùng rộng hơn native → letterbox đen ở viền (wide angle giả lập)
+    const activeZoom = Math.max(0.5, zoomLevel);
     const clipW = sW / activeZoom;
     const clipH = sH / activeZoom;
     const clipX = sx + (sW - clipW) / 2;
@@ -231,8 +231,8 @@ export default function CaptureScreen({
       sy = (vH - sH) / 2;
     }
 
-    // Luôn vẽ đầy canvas lấp đầy khung hình, không bị viền đen khi zoom < 1.0
-    const activeZoom = Math.max(1.0, zoomLevel);
+    // zoom < 1.0: capture vùng rộng hơn → wide angle giả lập
+    const activeZoom = Math.max(0.5, zoomLevel);
     const clipW = sW / activeZoom;
     const clipH = sH / activeZoom;
     const clipX = sx + (sW - clipW) / 2;
@@ -459,7 +459,7 @@ export default function CaptureScreen({
           muted
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-100"
           style={{
-            transform: `${isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)'} scale(${Math.max(1.0, zoomLevel)})`,
+            transform: `${isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)'} scale(${zoomLevel})`,
           }}
         />
 
