@@ -162,8 +162,7 @@ export default function CaptureScreen({
       ctx.scale(-1, 1);
     }
 
-    // zoom < 1.0 sẽ lấy vùng rộng hơn native → letterbox đen ở viền (wide angle giả lập)
-    const activeZoom = Math.max(0.5, zoomLevel);
+    const activeZoom = Math.max(1.0, zoomLevel);
     const clipW = sW / activeZoom;
     const clipH = sH / activeZoom;
     const clipX = sx + (sW - clipW) / 2;
@@ -231,8 +230,7 @@ export default function CaptureScreen({
       sy = (vH - sH) / 2;
     }
 
-    // zoom < 1.0: capture vùng rộng hơn → wide angle giả lập
-    const activeZoom = Math.max(0.5, zoomLevel);
+    const activeZoom = Math.max(1.0, zoomLevel);
     const clipW = sW / activeZoom;
     const clipH = sH / activeZoom;
     const clipX = sx + (sW - clipW) / 2;
@@ -362,7 +360,7 @@ export default function CaptureScreen({
         if (startDist > 0) {
           const factor = dist / startDist;
           let newZoom = startZoom * factor;
-          newZoom = Math.max(0.5, Math.min(3.0, newZoom));
+          newZoom = Math.max(1.0, Math.min(3.0, newZoom));
           onZoomChange(parseFloat(newZoom.toFixed(2)));
         }
       } else if (e.touches.length === 1 && isDragging) {
@@ -372,7 +370,7 @@ export default function CaptureScreen({
         // Độ nhạy: vuốt 180px chiều dọc thay đổi 1.0 zoom level
         const zoomChange = deltaY / 180;
         let newZoom = dragStartZoom + zoomChange;
-        newZoom = Math.max(0.5, Math.min(3.0, newZoom));
+        newZoom = Math.max(1.0, Math.min(3.0, newZoom));
         onZoomChange(parseFloat(newZoom.toFixed(2)));
       }
     };
@@ -459,7 +457,7 @@ export default function CaptureScreen({
           muted
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-100"
           style={{
-            transform: `${isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)'} scale(${zoomLevel})`,
+            transform: `${isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)'} scale(${Math.max(1.0, zoomLevel)})`,
           }}
         />
 
@@ -528,7 +526,7 @@ export default function CaptureScreen({
           </div>
           
           <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/10 shadow-lg">
-            {[0.5, 1.0, 2.0].map((preset) => {
+            {[1.0, 2.0].map((preset) => {
               const isActive = Math.abs(zoomLevel - preset) < 0.05;
               return (
                 <button
