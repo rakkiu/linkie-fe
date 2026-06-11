@@ -37,6 +37,15 @@ export default function CaptureScreen({
   const recordTimelapseFrameRef = useRef<() => void>(() => {});
   const startCountdownRef = useRef<() => void>(() => {});
 
+  // Refs cho cử chỉ thu phóng (Zoom)
+  const viewfinderRef = useRef<HTMLDivElement>(null);
+  const zoomLevelRef = useRef(zoomLevel);
+
+  // Đồng bộ zoomLevelRef khi zoomLevel thay đổi
+  useEffect(() => {
+    zoomLevelRef.current = zoomLevel;
+  }, [zoomLevel]);
+
   const [loading, setLoading] = useState(true);
   const [cameraError, setCameraError] = useState('');
   const [flashVisible, setFlashVisible] = useState(false);
@@ -147,17 +156,18 @@ export default function CaptureScreen({
       sy = (vH - sH) / 2;
     }
 
-    // Áp dụng zoom giả lập phần mềm cho timelapse
-    const clipW = sW / zoomLevel;
-    const clipH = sH / zoomLevel;
-    const clipX = sx + (sW - clipW) / 2;
-    const clipY = sy + (sH - clipH) / 2;
 
     if (isFrontCamera) {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
     }
 
+    // Luôn vẽ đầy canvas lấp đầy khung hình, không bị viền đen khi zoom < 1.0
+    const activeZoom = Math.max(1.0, zoomLevel);
+    const clipW = sW / activeZoom;
+    const clipH = sH / activeZoom;
+    const clipX = sx + (sW - clipW) / 2;
+    const clipY = sy + (sH - clipH) / 2;
     ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
     onAddTimelapseFrame(canvas.toDataURL('image/jpeg', 0.6));
   }, [isFrontCamera, zoomLevel, onAddTimelapseFrame]);
@@ -221,12 +231,12 @@ export default function CaptureScreen({
       sy = (vH - sH) / 2;
     }
 
-    // Áp dụng software zoom
-    const clipW = sW / zoomLevel;
-    const clipH = sH / zoomLevel;
+    // Luôn vẽ đầy canvas lấp đầy khung hình, không bị viền đen khi zoom < 1.0
+    const activeZoom = Math.max(1.0, zoomLevel);
+    const clipW = sW / activeZoom;
+    const clipH = sH / activeZoom;
     const clipX = sx + (sW - clipW) / 2;
     const clipY = sy + (sH - clipH) / 2;
-
     ctx.drawImage(video, clipX, clipY, clipW, clipH, 0, 0, canvas.width, canvas.height);
     const photoDataUrl = canvas.toDataURL('image/jpeg', 0.95);
     onAddPhoto(photoDataUrl);
@@ -305,10 +315,86 @@ export default function CaptureScreen({
     }
   };
 
-  // ── Zoom control slider ─────────────────────────────────────────────────────
-  const handleZoomSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onZoomChange(parseFloat(e.target.value));
-  };
+  // ── Xử lý cử chỉ vuốt 1 ngón tay & pinch 2 ngón tay để thu phóng (Zoom) ──────
+  useEffect(() => {
+    const el = viewfinderRef.current;
+    if (!el) return;
+
+    let isPinching = false;
+    let startDist = 0;
+    let startZoom = 1.0;
+
+    let isDragging = false;
+    let startY = 0;
+    let dragStartZoom = 1.0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      // Bấm vào nút preset hoặc điều khiển khác sẽ không kích hoạt zoom cử chỉ
+      const target = e.target as HTMLElement;
+      if (target.closest('button') || target.closest('input')) {
+        return;
+      }
+
+      if (e.touches.length === 2) {
+        isPinching = true;
+        isDragging = false;
+        e.preventDefault();
+        startDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        startZoom = zoomLevelRef.current;
+      } else if (e.touches.length === 1) {
+        isDragging = true;
+        isPinching = false;
+        startY = e.touches[0].clientY;
+        dragStartZoom = zoomLevelRef.current;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && isPinching) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (startDist > 0) {
+          const factor = dist / startDist;
+          let newZoom = startZoom * factor;
+          newZoom = Math.max(0.5, Math.min(3.0, newZoom));
+          onZoomChange(parseFloat(newZoom.toFixed(2)));
+        }
+      } else if (e.touches.length === 1 && isDragging) {
+        e.preventDefault();
+        const currentY = e.touches[0].clientY;
+        const deltaY = startY - currentY; // Vuốt lên tăng zoom, vuốt xuống giảm zoom
+        // Độ nhạy: vuốt 180px chiều dọc thay đổi 1.0 zoom level
+        const zoomChange = deltaY / 180;
+        let newZoom = dragStartZoom + zoomChange;
+        newZoom = Math.max(0.5, Math.min(3.0, newZoom));
+        onZoomChange(parseFloat(newZoom.toFixed(2)));
+      }
+    };
+
+    const onTouchEnd = () => {
+      isPinching = false;
+      isDragging = false;
+      startDist = 0;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchcancel', onTouchEnd);
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [onZoomChange]);
 
   const meta = PHOTOBOOTH_LAYOUT_META[layout];
 
@@ -362,15 +448,18 @@ export default function CaptureScreen({
       </div>
 
       {/* ── Viewfinder ─────────────────────────────── */}
-      <div className="flex-1 mx-4 mt-2 rounded-3xl overflow-hidden bg-black relative border border-white/5 shadow-2xl shadow-pink-500/5 flex items-center justify-center">
+      <div
+        ref={viewfinderRef}
+        className="flex-1 mx-4 mt-2 rounded-3xl overflow-hidden bg-black relative border border-white/5 shadow-2xl shadow-pink-500/5 flex items-center justify-center select-none touch-none"
+      >
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className="w-full h-full object-cover transition-transform duration-100"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-100"
           style={{
-            transform: `${isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)'} scale(${zoomLevel})`,
+            transform: `${isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)'} scale(${Math.max(1.0, zoomLevel)})`,
           }}
         />
 
@@ -431,21 +520,34 @@ export default function CaptureScreen({
           </span>
         </div>
 
-        {/* Software Zoom Slider (bottom center) */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-black/50 backdrop-blur-md border border-white/10 px-4 py-2 rounded-2xl flex items-center gap-3 w-4/5 max-w-[280px]">
-          <span className="text-[9px] font-bold text-white/60">1x</span>
-          <input
-            type="range"
-            min="1.0"
-            max="3.0"
-            step="0.1"
-            value={zoomLevel}
-            onChange={handleZoomSlider}
-            className="flex-1 accent-pink-500 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
-          />
-          <span className="text-[9px] font-bold text-pink-400 w-6 text-right">
+        {/* Quick Zoom Presets & Indicator */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 select-none pointer-events-auto">
+          {/* Zoom Indicator */}
+          <div className="bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 text-[9px] font-extrabold text-pink-400 tracking-wider">
             {zoomLevel.toFixed(1)}x
-          </span>
+          </div>
+          
+          <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/10 shadow-lg">
+            {[0.5, 1.0, 2.0].map((preset) => {
+              const isActive = Math.abs(zoomLevel - preset) < 0.05;
+              return (
+                <button
+                  key={preset}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onZoomChange(preset);
+                  }}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-200 active:scale-90 ${
+                    isActive
+                      ? 'bg-pink-500 text-white shadow-md shadow-pink-500/30'
+                      : 'bg-black/30 text-white/70 hover:text-white border border-white/5'
+                  }`}
+                >
+                  {preset === 0.5 ? '0.5' : preset === 1.0 ? '1x' : '2x'}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

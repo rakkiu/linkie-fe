@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { eventService, type PublicEvent, type ArFrame } from '../../services/eventService';
 import type { PhotoboothLayout, StickerItem } from './PhotoboothCompositor';
+import { useTicketVerification } from '../../hooks/useTicketVerification';
 
 import LayoutSelectionScreen from './LayoutSelectionScreen';
 import CaptureScreen from './CaptureScreen';
@@ -18,6 +19,7 @@ export default function PhotoboothPage() {
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [frames, setFrames] = useState<ArFrame[]>([]);
   const [loading, setLoading] = useState(true);
+  const { ticketStatus, loading: ticketLoading } = useTicketVerification(id);
 
   // Session state
   const [currentStep, setCurrentStep] = useState(0); // 0=Layout, 1=Capture, 2=Review, 3=Edit, 4=Save
@@ -189,11 +191,29 @@ export default function PhotoboothPage() {
     }
   };
 
-  if (loading) {
+  if (loading || ticketLoading) {
     return (
       <div className="bg-[#0d1117] min-h-screen text-white flex flex-col items-center justify-center">
         <div className="animate-spin text-4xl mb-4 text-[#00e5ff]">⟳</div>
         <p className="text-gray-400">Đang tải thông tin sự kiện...</p>
+      </div>
+    );
+  }
+
+  if (ticketStatus && !ticketStatus.hasValidTicket) {
+    return (
+      <div className="bg-[#0d1117] min-h-screen text-white flex flex-col items-center justify-center px-6 text-center">
+        <div className="text-6xl mb-6">🎟️</div>
+        <h2 className="text-2xl font-bold mb-3">Bạn chưa có vé cho sự kiện này</h2>
+        <p className="text-gray-400 text-sm max-w-sm">
+          Vui lòng mua vé để sử dụng tính năng Photobooth.
+        </p>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-8 px-6 py-3 rounded-full bg-white/10 border border-white/20 text-white font-semibold text-sm hover:bg-white/20 transition-all"
+        >
+          Quay lại
+        </button>
       </div>
     );
   }

@@ -17,6 +17,7 @@ export default function AdminCreateEventPage() {
     maxParticipants: 1000,
     isWishwallEnabled: true,
     status: 'Upcoming',
+    requiresTicket: false,
   });
 
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);

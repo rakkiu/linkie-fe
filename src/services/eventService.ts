@@ -13,6 +13,7 @@ export interface PublicEvent {
   isWishwallEnabled: boolean;
   thumbnailUrl: string | null;
   status: 'Draft' | 'Active' | 'Completed' | 'Cancelled';
+  requiresTicket?: boolean;
 }
 
 export interface ArFrame {
