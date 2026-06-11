@@ -17,8 +17,8 @@ interface Bubble {
 export default function WishwallPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { ticketStatus, loading: ticketLoading } = useTicketVerification(id);
 
-  const { ticketStatus, loading: ticketLoading } = useTicketVerification(id)
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
@@ -190,22 +190,26 @@ export default function WishwallPage() {
     );
   }
 
-  if (ticketStatus && !ticketStatus.hasValidTicket) {
+  if (!ticketStatus?.hasValidTicket) {
     return (
       <div className="bg-[#0d1117] min-h-screen text-white flex flex-col items-center justify-center px-6 text-center">
-        <div className="text-6xl mb-6">🎟️</div>
-        <h2 className="text-2xl font-bold mb-3">Bạn chưa có vé cho sự kiện này</h2>
-        <p className="text-gray-400 text-sm max-w-sm">
-          Vui lòng mua vé để gửi lời chúc lên Wishwall.
-        </p>
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-8 px-6 py-3 rounded-full bg-white/10 border border-white/20 text-white font-semibold text-sm hover:bg-white/20 transition-all"
-        >
-          Quay lại
-        </button>
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="text-6xl mb-6">🎟️</div>
+          <h2 className="text-2xl font-bold mb-3">Bạn chưa có vé cho sự kiện này</h2>
+          <p className="text-gray-400 text-sm max-w-sm">
+            Vui lòng mua vé để gửi lời chúc lên Wishwall.
+          </p>
+          <button
+            onClick={() => navigate(`/events/${id}`)}
+            className="mt-8 px-6 py-3 rounded-full bg-white/10 border border-white/20 text-white font-semibold text-sm hover:bg-white/20 transition-all"
+          >
+            Quay lại
+          </button>
+        </div>
       </div>
     )
+
   }
 
   const eventName = event?.name || 'Sự kiện';

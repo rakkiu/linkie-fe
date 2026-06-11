@@ -36,6 +36,9 @@ export default function AdminEventsListPage() {
   const [cropperImage, setCropperImage] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
 
+  // Ticket Verification Toggle
+  const [ticketVerificationLoading, setTicketVerificationLoading] = useState(false);
+
   // Filter and Sort states
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('time-desc');
@@ -112,7 +115,9 @@ export default function AdminEventsListPage() {
       maxParticipants: event.maxParticipants || 1000,
       isWishwallEnabled: event.isWishwallEnabled,
       status: mapStatusToString(event.status),
+      requiresTicket: event.requiresTicket ?? false,
     });
+    setTicketVerificationLoading(false);
     setEditThumbnailPreview(event.thumbnailUrl);
     setEditThumbnailFile(null);
     fetchFrames(event.id);
@@ -519,6 +524,45 @@ export default function AdminEventsListPage() {
                     </div>
                   </div>
                   
+                  {/* Ticket Verification Toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'white' }}>Xác thực vé</div>
+                      <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                        {editFormData.requiresTicket
+                          ? 'Đang bật — user phải có vé để tham gia'
+                          : 'Đang tắt — mọi người đều có thể tham gia'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={ticketVerificationLoading}
+                      onClick={async () => {
+                        setTicketVerificationLoading(true)
+                        try {
+                          const newValue = !editFormData.requiresTicket
+                          await adminEventService.toggleTicketVerification(editingId!, newValue)
+                          setEditFormData({ ...editFormData, requiresTicket: newValue })
+                          showToast('success', newValue ? 'Đã bật xác thực vé' : 'Đã tắt xác thực vé')
+                        } catch {
+                          showToast('error', 'Cập nhật thất bại, thử lại.')
+                        } finally {
+                          setTicketVerificationLoading(false)
+                        }
+                      }}
+                      style={{
+                        padding: '8px 20px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: 800,
+                        letterSpacing: '1px', cursor: 'pointer', whiteSpace: 'nowrap',
+                        background: editFormData.requiresTicket
+                          ? 'linear-gradient(135deg,#00e676,#1b5e20)'
+                          : 'rgba(255,255,255,0.08)',
+                        color: editFormData.requiresTicket ? 'white' : '#888',
+                      }}
+                    >
+                      {ticketVerificationLoading ? '...' : editFormData.requiresTicket ? 'BẬT' : 'TẮT'}
+                    </button>
+                  </div>
+
                   <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '20px' }}>
                     <button type="button" onClick={closeEditModal} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#999', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}> HỦY </button>
                     <button type="submit" form="edit-event-form" disabled={editLoading} style={{ flex: 1.5, padding: '10px', borderRadius: '8px', border: 'none', background: editLoading ? '#333' : 'linear-gradient(135deg, #00e5ff, #00b0ff)', color: 'white', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 16px rgba(0, 176, 255, 0.2)', fontSize: '13px' }}> {editLoading ? 'ĐANG LƯU...' : 'LƯU THAY ĐỔI'} </button>

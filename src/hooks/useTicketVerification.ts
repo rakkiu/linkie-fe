@@ -26,6 +26,7 @@ export const useTicketVerification = (
     } catch {
       setTicketStatus({
         hasValidTicket: false,
+        requiresTicket: true,
         message: 'Không thể kiểm tra vé. Vui lòng thử lại sau.',
       })
     } finally {
