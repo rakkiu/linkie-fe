@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logoStar from '../image/logo-linkie-black.png';
 import logoText from '../image/Linkie.png';
@@ -15,47 +14,12 @@ const GoogleIcon = () => (
 );
 
 export default function LoginPage() {
-  const { login, loginWithGoogle } = useAuth();
-  const navigate = useNavigate(); // Added missing navigate hook
+  const { loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname; 
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) { setError('Vui lòng nhập đầy đủ thông tin.'); return; }
-    setError('');
-    setLoading(true);
-    try {
-      const user = await login(email, password);
-      const role = user?.role;
-      
-      if (from) {
-        navigate(from, { replace: true });
-      } else if (role === 'admin') {
-        navigate('/admin/events');
-      } else if (role === 'staff') {
-        navigate('/staff/wishwall'); 
-      } else if (role === 'led') {
-        navigate('/led');
-      } else {
-        navigate('/');
-      }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const serverMessage = err.response?.data?.message as string | undefined;
-        setError(serverMessage || 'Email hoặc mật khẩu không đúng.');
-      } else {
-        setError('Email hoặc mật khẩu không đúng.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -99,59 +63,13 @@ export default function LoginPage() {
           Tiếp tục với Google
         </button>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-white/15" />
-          <span className="text-gray-500 text-xs">hoặc</span>
-          <div className="flex-1 h-px bg-white/15" />
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleLogin} className="flex flex-col gap-3">
-          <input
-            type="email"
-            placeholder="Nhập email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
-          />
-          <input
-            type="password"
-            placeholder="Mật khẩu"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
-          />
-
-          {error && <p className="text-red-400 text-xs text-center">{error}</p>}
-
-          {/* Action buttons */}
-          <div className="flex gap-3 mt-2">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex-1 border border-[#00bcd4] text-white font-bold tracking-widest text-sm py-3 rounded-full hover:bg-[#00bcd4]/10 active:scale-[0.98] transition-all"
-            >
-              QUAY LẠI
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 font-bold tracking-widest text-sm py-3 rounded-full text-white active:scale-[0.98] transition-all disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #e91e8c, #9c27b0)' }}
-            >
-              {loading ? '...' : 'ĐĂNG NHẬP'}
-            </button>
-          </div>
-        </form>
-
-        {/* Register link */}
-        <p className="text-gray-500 text-xs text-center mt-5">
-          Bạn chưa có tài khoản?{' '}
-          <Link to="/register" className="text-[#00bcd4] hover:underline">
-            Đăng ký ngay
-          </Link>
-        </p>
+        {/* Back button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="w-full border border-[#00bcd4] text-white font-bold tracking-widest text-sm py-3 rounded-full hover:bg-[#00bcd4]/10 active:scale-[0.98] transition-all mb-4"
+        >
+          QUAY LẠI
+        </button>
 
         {/* Disclaimer */}
         <p className="text-center text-gray-500 text-[11px] mt-8 leading-relaxed">
