@@ -161,7 +161,7 @@ export class PhotoboothCompositor {
     ctx: CanvasRenderingContext2D,
     img: HTMLImageElement,
     cell: { x: number; y: number; w: number; h: number },
-    flipHorizontal: boolean
+    _flipHorizontal: boolean
   ) {
     ctx.save();
 
