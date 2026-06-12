@@ -4,10 +4,10 @@ import type { PhotoboothLayout } from './PhotoboothCompositor';
 
 import { PhotoboothCompositor } from './PhotoboothCompositor';
 
-// ── Tỉ lệ ô strip1x4 trong canvas 1080×1920 theo chuẩn mới có Header/Footer
+// ── Tỉ lệ ô strip1x2 trong canvas 1080×1920 theo chuẩn mới có Header/Footer
 // Cell: 968 × 367 → ratio ≈ 2.637
 const STRIP_CELL_W = PhotoboothCompositor.canvasWidth - PhotoboothCompositor.paddingSide * 2;
-const STRIP_CELL_H = (PhotoboothCompositor.canvasHeight - PhotoboothCompositor.paddingTop - PhotoboothCompositor.paddingBottom - PhotoboothCompositor.gap * 3) / 4;
+const STRIP_CELL_H = (PhotoboothCompositor.canvasHeight - PhotoboothCompositor.paddingTop - PhotoboothCompositor.paddingBottom - PhotoboothCompositor.gap * 1) / 2;
 const STRIP_CELL_RATIO = STRIP_CELL_W / STRIP_CELL_H;
 
 interface CaptureScreenProps {
@@ -35,7 +35,7 @@ export default function CaptureScreen({
   onZoomChange,
   onComplete,
 }: CaptureScreenProps) {
-  const isStrip = layout === 'strip1x4';
+  const isStrip = layout === 'strip1x2';
 
   // ── Refs ────────────────────────────────────────────────────────────────────
   const videoRef = useRef<HTMLVideoElement>(null);       // Standard viewfinder
@@ -67,7 +67,7 @@ export default function CaptureScreen({
 
   // ── Strip-only state ────────────────────────────────────────────────────────
   const [activeSlotIndex, setActiveSlotIndex] = useState(0);
-  const [slotPhotos, setSlotPhotos] = useState<(string | null)[]>(Array(4).fill(null));
+  const [slotPhotos, setSlotPhotos] = useState<(string | null)[]>(Array(2).fill(null));
 
   // ── Khởi động Camera ────────────────────────────────────────────────────────
   const startCamera = useCallback(async () => {
@@ -246,13 +246,13 @@ export default function CaptureScreen({
     const doneCount = slotPhotos.filter(p => p !== null).length;
     let localTimer: number | null = null;
     
-    if (doneCount === 4 && !completedRef.current) {
+    if (doneCount === 2 && !completedRef.current) {
       completedRef.current = true;
       localTimer = window.setTimeout(() => {
         slotPhotos.forEach(p => { if (p) onAddPhoto(p); });
         onComplete();
       }, 1000);
-    } else if (doneCount > 0 && doneCount < 4 && !completedRef.current) {
+    } else if (doneCount > 0 && doneCount < 2 && !completedRef.current) {
       // Tìm slot kế tiếp chưa có ảnh
       const nextEmpty = slotPhotos.findIndex(p => p === null);
       if (nextEmpty !== -1 && activeSlotIndex !== nextEmpty) {
@@ -379,7 +379,7 @@ export default function CaptureScreen({
   }
 
   // ╔═══════════════════════════════════════════════════════════════════════════╗
-  // ║  STRIP 1×4 — Multi-slot Camera View                                     ║
+  // ║  STRIP 1×2 — Multi-slot Camera View                                     ║
   // ╚═══════════════════════════════════════════════════════════════════════════╝
   if (isStrip) {
     const doneCount = slotPhotos.filter(p => p !== null).length;
@@ -400,7 +400,7 @@ export default function CaptureScreen({
         {/* Progress dots */}
         <div className="px-4 py-2 shrink-0 flex items-center justify-between">
           <span className="text-[10px] text-pink-400 font-black uppercase tracking-widest">
-            Tấm {Math.min(doneCount + 1, 4)} / 4
+            Tấm {Math.min(doneCount + 1, 2)} / 2
           </span>
           <div className="flex gap-1.5">
             {slotPhotos.map((p, i) => (
@@ -413,7 +413,7 @@ export default function CaptureScreen({
           </div>
         </div>
 
-        {/* 4 Slots */}
+        {/* 2 Slots */}
         <div className="flex-1 px-3 flex flex-col gap-2 overflow-hidden min-h-0">
           {slotPhotos.map((photo, idx) => {
             const isActive = idx === activeSlotIndex;

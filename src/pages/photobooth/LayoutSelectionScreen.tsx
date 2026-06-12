@@ -16,16 +16,16 @@ export default function LayoutSelectionScreen({
   selectedLayout,
   onConfirm,
 }: LayoutSelectionScreenProps) {
-  const layouts: PhotoboothLayout[] = ['strip1x4', 'grid2x2', 'grid2x4'];
+  const layouts: PhotoboothLayout[] = ['strip1x2', 'grid2x2', 'grid2x4'];
 
   const renderLayoutPreview = (layout: PhotoboothLayout, isSelected: boolean) => {
     const activeColor = isSelected ? 'bg-pink-500/30 border-pink-500' : 'bg-white/5 border-white/10';
     const borderColor = isSelected ? 'border-pink-500' : 'border-white/20';
 
-    if (layout === 'strip1x4') {
+    if (layout === 'strip1x2') {
       return (
         <div className="flex flex-col gap-1.5 h-24 w-12 mx-auto justify-center">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className={`flex-1 rounded border ${activeColor} ${borderColor}`} />
           ))}
         </div>

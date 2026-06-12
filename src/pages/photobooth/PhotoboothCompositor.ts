@@ -1,4 +1,4 @@
-export type PhotoboothLayout = 'strip1x4' | 'grid2x2' | 'grid2x4';
+export type PhotoboothLayout = 'strip1x2' | 'grid2x2' | 'grid2x4';
 
 export type StickerCategory = 'emoji' | 'decorative' | 'text';
 
@@ -14,9 +14,9 @@ export interface StickerItem {
 }
 
 export const PHOTOBOOTH_LAYOUT_META = {
-  strip1x4: {
-    photoCount: 4,
-    label: '1×4 Strip',
+  strip1x2: {
+    photoCount: 2,
+    label: '1×2 Strip',
     icon: '📋'
   },
   grid2x2: {
@@ -123,11 +123,11 @@ export class PhotoboothCompositor {
     const pB = this.paddingBottom;
     const pS = this.paddingSide;
 
-    if (layout === 'strip1x4') {
+    if (layout === 'strip1x2') {
       const cellW = W - pS * 2;
-      const totalGaps = gap * 3;
-      const cellH = (H - pT - pB - totalGaps) / 4;
-      for (let row = 0; row < 4; row++) {
+      const totalGaps = gap * 1;
+      const cellH = (H - pT - pB - totalGaps) / 2;
+      for (let row = 0; row < 2; row++) {
         const y = pT + row * (cellH + gap);
         rects.push({ x: pS, y, w: cellW, h: cellH });
       }
@@ -185,12 +185,15 @@ export class PhotoboothCompositor {
       sy = (img.height - sh) / 2;
     }
 
-    // 3) Draw
+    // 3) Khong ap dung lat anh o buoc compositing vi da duoc xu ly qua canvas CaptureScreen
+    // Remove ctx.scale(-1, 1) to fix mirror bug
+
+    // 4) Draw the cropped and optionally flipped image
     ctx.drawImage(img, sx, sy, sw, sh, cell.x, cell.y, cell.w, cell.h);
 
     ctx.restore();
 
-    // Viền trắng mờ đã bị xoá theo yêu cầu để tránh lộ khe hở với Khung AR.
+    // 5) Draw inner stroke (border) around the image  // Viền trắng mờ đã bị xoá theo yêu cầu để tránh lộ khe hở với Khung AR.
   }
 
   /** Draw sticker on canvas */
@@ -224,7 +227,7 @@ export class PhotoboothCompositor {
 
   /** Draw styled text sticker with background pill and shadow glow */
   private static drawTextSticker(ctx: CanvasRenderingContext2D, sticker: StickerItem, fontSize: number) {
-    ctx.font = `black 900 ${fontSize}px "Outfit", "Inter", sans-serif`;
+    ctx.font = `900 ${fontSize}px "Outfit", "Inter", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 

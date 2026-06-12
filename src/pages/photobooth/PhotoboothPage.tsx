@@ -89,7 +89,7 @@ export default function PhotoboothPage() {
 
   // ── Auto-select mới nhất nếu chưa đủ ảnh (Tách rời tránh lỗi StrictMode) ───
   useEffect(() => {
-    const requiredCount = selectedLayout === 'grid2x4' ? 8 : 4;
+    const requiredCount = selectedLayout === 'grid2x4' ? 8 : selectedLayout === 'strip1x2' ? 2 : 4;
     if (selectedIndices.length < requiredCount && capturedPhotos.length > 0) {
       setSelectedIndices((prev) => {
         const nextIndices = [...prev];
@@ -123,7 +123,7 @@ export default function PhotoboothPage() {
           />
         );
       case 1: {
-        const requiredCount = selectedLayout === 'grid2x4' ? 8 : 4;
+        const requiredCount = selectedLayout === 'grid2x4' ? 8 : selectedLayout === 'strip1x2' ? 2 : 4;
         return (
           <CaptureScreen
             layout={selectedLayout}

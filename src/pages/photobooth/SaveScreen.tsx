@@ -248,22 +248,17 @@ export default function SaveScreen({
 
       {/* ── Composite Preview ───────────────────────── */}
       <div 
-        className="relative rounded-3xl overflow-hidden border border-white/10 bg-black shadow-2xl shadow-pink-500/5 mx-auto"
-        style={{
-          aspectRatio: '9/16',
-          width: '100%',
-          maxWidth: 'calc(55vh * 9 / 16)',
-          maxHeight: '100%'
-        }}
+        className="relative mx-auto flex justify-center items-center h-[65vh] max-h-full"
+        style={{ aspectRatio: '9/16' }}
       >
         <img
           src={currentCompositeImage}
           alt="Final Photobooth Photo"
-          className="w-full h-full object-cover"
+          className="h-full object-contain rounded-3xl border border-white/10 shadow-2xl shadow-pink-500/5"
         />
 
         {isRecompositing && (
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-10 rounded-3xl border border-white/10">
             <div className="animate-spin w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full" />
           </div>
         )}
