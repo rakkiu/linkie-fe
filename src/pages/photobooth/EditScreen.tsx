@@ -306,7 +306,7 @@ export default function EditScreen({
   }
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden w-full max-w-md mx-auto relative pb-6 select-none">
+    <div className="flex flex-col flex-1 overflow-y-auto w-full max-w-md mx-auto relative pb-12 px-2 select-none custom-scrollbar">
       {/* ── Toolbar ────────────────────────────────── */}
       <div className="px-6 py-2 flex items-center justify-between shrink-0">
         <span className="text-white text-sm font-bold">Thêm sticker</span>
