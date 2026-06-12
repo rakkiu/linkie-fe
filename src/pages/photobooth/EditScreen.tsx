@@ -331,11 +331,17 @@ export default function EditScreen({
       </div>
 
       {/* ── Canvas Area ────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-4 min-h-[300px]">
+      <div className="flex-1 flex items-center justify-center p-4 w-full">
         <div
           ref={canvasRef}
           onClick={() => setSelectedStickerId(null)}
-          className="relative aspect-[9/16] h-full max-h-[60vh] rounded-3xl overflow-hidden border border-white/10 bg-gray-900 shadow-2xl shadow-black/50"
+          className="relative rounded-3xl overflow-hidden border border-white/10 bg-gray-900 shadow-2xl shadow-black/50 mx-auto"
+          style={{
+            aspectRatio: '9/16',
+            width: '100%',
+            maxWidth: 'calc(65vh * 9 / 16)',
+            maxHeight: '100%'
+          }}
         >
           {compositePreview && (
             <img src={compositePreview} alt="Composite preview" className="w-full h-full object-cover pointer-events-none" />

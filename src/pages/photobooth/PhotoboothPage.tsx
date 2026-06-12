@@ -87,6 +87,25 @@ export default function PhotoboothPage() {
     setCurrentStep(0);
   };
 
+  // ── Auto-select mới nhất nếu chưa đủ ảnh (Tách rời tránh lỗi StrictMode) ───
+  useEffect(() => {
+    const requiredCount = selectedLayout === 'grid2x4' ? 8 : 4;
+    if (selectedIndices.length < requiredCount && capturedPhotos.length > 0) {
+      setSelectedIndices((prev) => {
+        const nextIndices = [...prev];
+        let changed = false;
+        for (let i = 0; i < capturedPhotos.length; i++) {
+          if (nextIndices.length >= requiredCount) break;
+          if (!nextIndices.includes(i)) {
+            nextIndices.push(i);
+            changed = true;
+          }
+        }
+        return changed ? nextIndices : prev;
+      });
+    }
+  }, [capturedPhotos.length, selectedLayout, selectedIndices.length]);
+
   // ── Render Từng Màn Hình Thành Phần ──────────────────────────────────────────
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -113,14 +132,7 @@ export default function PhotoboothPage() {
             isFrontCamera={isFrontCamera}
             zoomLevel={zoomLevel}
             onAddPhoto={(photo) => {
-              setCapturedPhotos((prev) => {
-                const next = [...prev, photo];
-                // Tự động chọn ảnh vào layout nếu chưa đầy
-                if (selectedIndices.length < requiredCount) {
-                  setSelectedIndices((sPrev) => [...sPrev, next.length - 1]);
-                }
-                return next;
-              });
+              setCapturedPhotos((prev) => [...prev, photo]);
             }}
             onAddTimelapseFrame={(frame) => setTimelapseFrames((prev) => [...prev, frame])}
             onToggleFrontCamera={setIsFrontCamera}
@@ -219,7 +231,7 @@ export default function PhotoboothPage() {
   }
 
   return (
-    <div className="bg-[#0d1117] min-h-screen text-white flex flex-col overflow-hidden">
+    <div className="bg-[#0d1117] h-screen h-[100dvh] text-white flex flex-col overflow-hidden">
       <Navbar />
 
       {/* ── Header with step indicator ──────────────── */}

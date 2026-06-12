@@ -247,7 +247,15 @@ export default function SaveScreen({
       )}
 
       {/* ── Composite Preview ───────────────────────── */}
-      <div className="relative aspect-[9/16] w-full max-h-[50vh] rounded-3xl overflow-hidden border border-white/10 bg-black shadow-2xl shadow-pink-500/5">
+      <div 
+        className="relative rounded-3xl overflow-hidden border border-white/10 bg-black shadow-2xl shadow-pink-500/5 mx-auto"
+        style={{
+          aspectRatio: '9/16',
+          width: '100%',
+          maxWidth: 'calc(55vh * 9 / 16)',
+          maxHeight: '100%'
+        }}
+      >
         <img
           src={currentCompositeImage}
           alt="Final Photobooth Photo"
@@ -431,25 +439,6 @@ export default function SaveScreen({
         </button>
       </div>
 
-      {/* Info notice */}
-      <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/5 flex gap-3 shrink-0">
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="rgba(255,255,255,0.4)"
-          strokeWidth="2.5"
-          className="shrink-0"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" />
-        </svg>
-        <span className="text-[11px] text-gray-500 font-medium leading-relaxed">
-          Ảnh được lưu với chất lượng cao (1080×1920) phù hợp làm Story hoặc chia sẻ trực tiếp lên các mạng xã hội.
-        </span>
-      </div>
     </div>
   );
 }

@@ -34,8 +34,13 @@ export const PHOTOBOOTH_LAYOUT_META = {
 export class PhotoboothCompositor {
   static readonly canvasWidth = 1080;
   static readonly canvasHeight = 1920;
-  private static readonly gap = 20.0;
-  private static readonly padding = 24.0;
+  
+  // -- THÔNG SỐ KHUNG CHUẨN --
+  static readonly gap = 24.0;           // Khoảng cách giữa các ảnh
+  static readonly paddingTop = 100.0;   // Lề trên (để header)
+  static readonly paddingBottom = 280.0;// Lề dưới lớn (để footer, sticker, QR...)
+  static readonly paddingSide = 56.0;   // Lề trái phải (để chữ chạy dọc)
+  
   private static readonly cornerRadius = 16.0;
 
   /** Helper load an image from URL / Base64 */
@@ -102,13 +107,9 @@ export class PhotoboothCompositor {
     return canvas.toDataURL('image/jpeg', 0.92);
   }
 
-  /** Draw gradient background */
+  /** Draw flat background */
   private static drawBackground(ctx: CanvasRenderingContext2D) {
-    const grad = ctx.createLinearGradient(0, 0, 0, this.canvasHeight);
-    grad.addColorStop(0, '#0D1117');
-    grad.addColorStop(0.5, '#161B22');
-    grad.addColorStop(1, '#0D1117');
-    ctx.fillStyle = grad;
+    ctx.fillStyle = '#000000'; // Đen tuyệt đối để dễ đồng bộ với Khung AR
     ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
   }
 
@@ -117,35 +118,37 @@ export class PhotoboothCompositor {
     const rects: { x: number; y: number; w: number; h: number }[] = [];
     const W = this.canvasWidth;
     const H = this.canvasHeight;
-    const padding = this.padding;
     const gap = this.gap;
+    const pT = this.paddingTop;
+    const pB = this.paddingBottom;
+    const pS = this.paddingSide;
 
     if (layout === 'strip1x4') {
-      const cellW = W - padding * 2;
+      const cellW = W - pS * 2;
       const totalGaps = gap * 3;
-      const cellH = (H - padding * 2 - totalGaps) / 4;
+      const cellH = (H - pT - pB - totalGaps) / 4;
       for (let row = 0; row < 4; row++) {
-        const y = padding + row * (cellH + gap);
-        rects.push({ x: padding, y, w: cellW, h: cellH });
+        const y = pT + row * (cellH + gap);
+        rects.push({ x: pS, y, w: cellW, h: cellH });
       }
     } else if (layout === 'grid2x2') {
-      const cellW = (W - padding * 2 - gap) / 2;
-      const cellH = (H - padding * 2 - gap) / 2;
+      const cellW = (W - pS * 2 - gap) / 2;
+      const cellH = (H - pT - pB - gap) / 2;
       for (let row = 0; row < 2; row++) {
         for (let col = 0; col < 2; col++) {
-          const x = padding + col * (cellW + gap);
-          const y = padding + row * (cellH + gap);
+          const x = pS + col * (cellW + gap);
+          const y = pT + row * (cellH + gap);
           rects.push({ x, y, w: cellW, h: cellH });
         }
       }
     } else if (layout === 'grid2x4') {
-      const cellW = (W - padding * 2 - gap) / 2;
+      const cellW = (W - pS * 2 - gap) / 2;
       const totalGaps = gap * 3;
-      const cellH = (H - padding * 2 - totalGaps) / 4;
+      const cellH = (H - pT - pB - totalGaps) / 4;
       for (let row = 0; row < 4; row++) {
         for (let col = 0; col < 2; col++) {
-          const x = padding + col * (cellW + gap);
-          const y = padding + row * (cellH + gap);
+          const x = pS + col * (cellW + gap);
+          const y = pT + row * (cellH + gap);
           rects.push({ x, y, w: cellW, h: cellH });
         }
       }
@@ -182,25 +185,12 @@ export class PhotoboothCompositor {
       sy = (img.height - sh) / 2;
     }
 
-    // 3) Draw and flip if front camera
-    if (flipHorizontal) {
-      ctx.translate(cell.x + cell.w, cell.y);
-      ctx.scale(-1, 1);
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cell.w, cell.h);
-    } else {
-      ctx.drawImage(img, sx, sy, sw, sh, cell.x, cell.y, cell.w, cell.h);
-    }
+    // 3) Draw
+    ctx.drawImage(img, sx, sy, sw, sh, cell.x, cell.y, cell.w, cell.h);
 
     ctx.restore();
 
-    // 4) Draw subtle white-translucent border
-    ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(cell.x, cell.y, cell.w, cell.h, this.cornerRadius);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.restore();
+    // Viền trắng mờ đã bị xoá theo yêu cầu để tránh lộ khe hở với Khung AR.
   }
 
   /** Draw sticker on canvas */
