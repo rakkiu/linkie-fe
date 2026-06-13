@@ -49,9 +49,14 @@ export default function PhotoboothPage() {
 
         if (isMounted) {
           setEvent(evtData);
-          setFrames(framesData);
-          if (framesData.length > 0) {
-            setSelectedFrame(framesData[0]);
+          const pbFrames = framesData
+            .filter(f => f.name.toLowerCase().startsWith('photobooth_'))
+            .map(f => ({ ...f, name: f.name.replace(/^photobooth_/i, '') }));
+          setFrames(pbFrames);
+          if (pbFrames.length > 0) {
+            setSelectedFrame(pbFrames[0]);
+          } else {
+            setSelectedFrame(null);
           }
         }
       } catch (err) {

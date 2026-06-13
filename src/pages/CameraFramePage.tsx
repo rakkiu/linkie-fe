@@ -53,7 +53,7 @@ export default function CameraFramePage() {
         ]);
         if (isMounted) {
           setEvent(evtData);
-          setFrames(framesData);
+          setFrames(framesData.filter(f => !f.name.toLowerCase().startsWith('photobooth_')));
         }
       } catch {
         // fail silently
