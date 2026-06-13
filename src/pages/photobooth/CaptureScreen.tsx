@@ -100,15 +100,9 @@ export default function CaptureScreen({
         }
       } catch { setHasTorch(false); }
 
-      // Standard mode: gán vào videoRef
-      if (!isStrip && videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => setLoading(false);
-        videoRef.current.play().catch(err => console.warn('Video play error:', err));
-      } else {
-        // Strip mode: loading false ngay, srcObject gán trong useEffect
-        setLoading(false);
-      }
+      // Luôn setLoading(false) để component render video element trước
+      // useEffect riêng sẽ gán srcObject sau khi element đã mount
+      setLoading(false);
     } catch (err) {
       console.error('Camera error:', err);
       setCameraError('Không thể truy cập camera. Vui lòng cấp quyền camera.');
@@ -134,6 +128,16 @@ export default function CaptureScreen({
       el.play().catch(() => {});
     }
   }, [isStrip, loading, activeSlotIndex]);
+
+  // ── Standard (2x2 / 2x4): gán stream vào videoRef sau khi đã render ────────
+  useEffect(() => {
+    if (isStrip || loading || !streamRef.current) return;
+    const el = videoRef.current;
+    if (el && el.srcObject !== streamRef.current) {
+      el.srcObject = streamRef.current;
+      el.play().catch(err => console.warn('Video play error:', err));
+    }
+  }, [isStrip, loading]);
 
   // ── Lấy video element đang active (để capture/timelapse) ───────────────────
   const getActiveVideo = useCallback(() => {

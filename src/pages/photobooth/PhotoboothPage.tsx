@@ -70,6 +70,10 @@ export default function PhotoboothPage() {
   // ── Quay lại bước trước / Thoát ───────────────────────────────────────────────
   const handleBack = () => {
     if (currentStep > 0) {
+      if (currentStep === 2) {
+        setCapturedPhotos([]);
+        setSelectedIndices([]);
+      }
       setCurrentStep(currentStep - 1);
     } else {
       navigate(-1);
@@ -149,7 +153,7 @@ export default function PhotoboothPage() {
             selectedIndices={selectedIndices}
             onToggleSelection={(idx) => {
               setSelectedIndices((prev) => {
-                const requiredCount = selectedLayout === 'grid2x4' ? 8 : 4;
+                const requiredCount = selectedLayout === 'grid2x4' ? 8 : selectedLayout === 'strip1x2' ? 2 : 4;
                 if (prev.includes(idx)) {
                   return prev.filter((i) => i !== idx);
                 } else if (prev.length < requiredCount) {
@@ -158,7 +162,11 @@ export default function PhotoboothPage() {
                 return prev;
               });
             }}
-            onRetake={() => setCurrentStep(1)}
+            onRetake={() => {
+              setCapturedPhotos([]);
+              setSelectedIndices([]);
+              setCurrentStep(1);
+            }}
             onConfirm={() => setCurrentStep(3)}
           />
         );
