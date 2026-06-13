@@ -23,10 +23,18 @@ export default function AdminCreateEventPage() {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [stagedFrames, setStagedFrames] = useState<{ id: string; name: string; file: File; preview: string }[]>([]);
-  const [newFrameName, setNewFrameName] = useState('');
-  const [newFrameFile, setNewFrameFile] = useState<File | null>(null);
-  const [newFramePreview, setNewFramePreview] = useState<string | null>(null);
+  const [stagedFrames, setStagedFrames] = useState<{ id: string; name: string; file: File; preview: string; type: 'ar' | 'photobooth' }[]>([]);
+  
+  // AR Frame States
+  const [newArFrameName, setNewArFrameName] = useState('');
+  const [newArFrameFile, setNewArFrameFile] = useState<File | null>(null);
+  const [newArFramePreview, setNewArFramePreview] = useState<string | null>(null);
+
+  // Photobooth Frame States
+  const [newPbFrameName, setNewPbFrameName] = useState('');
+  const [newPbFrameFile, setNewPbFrameFile] = useState<File | null>(null);
+  const [newPbFramePreview, setNewPbFramePreview] = useState<string | null>(null);
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -100,7 +108,8 @@ export default function AdminCreateEventPage() {
       if (eventId && stagedFrames.length > 0) {
         setToast({ type: 'success', message: `Đã tạo sự kiện. Đang tải lên ${stagedFrames.length} khung hình...` });
         for (const frame of stagedFrames) {
-          await adminEventService.uploadFrame(eventId, frame.name, frame.file);
+          const uploadName = frame.type === 'photobooth' ? `photobooth_${frame.name}` : frame.name;
+          await adminEventService.uploadFrame(eventId, uploadName, frame.file);
         }
       }
       
@@ -118,21 +127,40 @@ export default function AdminCreateEventPage() {
     }
   };
 
-  const handleAddFrame = (e: React.FormEvent) => {
+  const handleAddArFrame = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFrameName || !newFrameFile) return;
+    if (!newArFrameName || !newArFrameFile) return;
     
     const newFrame = {
       id: Math.random().toString(36).substr(2, 9),
-      name: newFrameName,
-      file: newFrameFile,
-      preview: URL.createObjectURL(newFrameFile)
+      name: newArFrameName,
+      file: newArFrameFile,
+      preview: URL.createObjectURL(newArFrameFile),
+      type: 'ar' as const
     };
     
     setStagedFrames([...stagedFrames, newFrame]);
-    setNewFrameName('');
-    setNewFrameFile(null);
-    setNewFramePreview(null);
+    setNewArFrameName('');
+    setNewArFrameFile(null);
+    setNewArFramePreview(null);
+  };
+
+  const handleAddPbFrame = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPbFrameName || !newPbFrameFile) return;
+    
+    const newFrame = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newPbFrameName,
+      file: newPbFrameFile,
+      preview: URL.createObjectURL(newPbFrameFile),
+      type: 'photobooth' as const
+    };
+    
+    setStagedFrames([...stagedFrames, newFrame]);
+    setNewPbFrameName('');
+    setNewPbFrameFile(null);
+    setNewPbFramePreview(null);
   };
 
   const handleRemoveStagedFrame = (id: string) => {
@@ -274,85 +302,172 @@ export default function AdminCreateEventPage() {
 
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '20px 0' }} />
 
-          {/* AR Frames Section */}
-          <div>
-            <h2 style={{ color: '#00e5ff', fontSize: '18px', fontWeight: 800, marginBottom: '24px', letterSpacing: '1px' }}>
-              QUẢN LÝ AR FRAMES
-            </h2>
+          {/* AR Frames & Photobooth Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+            {/* 1. AR Frames Section */}
+            <div>
+              <h2 style={{ color: '#00e5ff', fontSize: '18px', fontWeight: 800, marginBottom: '24px', letterSpacing: '1px' }}>
+                QUẢN LÝ AR FRAMES (CHO CAMERA)
+              </h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '40px' }}>
-              {/* Form Upload */}
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '24px', borderRadius: '12px' }}>
-                <p style={labelStyle}>THÊM KHUNG HÌNH (SẼ TẠO CÙNG SỰ KIỆN)</p>
-                
-                {newFramePreview && (
-                  <div style={{ width: 'fit-content', minWidth: '100px', maxWidth: '100%', height: '160px', borderRadius: '10px', marginBottom: '16px', overflow: 'hidden', border: '1px solid rgba(0, 229, 255, 0.3)', cursor: 'pointer', margin: '0 auto', backgroundSize: '10px 10px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000' }} onClick={() => setPreviewImage(newFramePreview)}>
-                    <img src={newFramePreview} alt="Queued Frame Preview" style={{ height: '100%', objectFit: 'contain' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '40px' }}>
+                {/* Form Upload */}
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '24px', borderRadius: '12px' }}>
+                  <p style={labelStyle}>THÊM KHUNG HÌNH AR (SẼ TẠO CÙNG SỰ KIỆN)</p>
+                  
+                  {newArFramePreview && (
+                    <div style={{ width: 'fit-content', minWidth: '100px', maxWidth: '100%', height: '160px', borderRadius: '10px', marginBottom: '16px', overflow: 'hidden', border: '1px solid rgba(0, 229, 255, 0.3)', cursor: 'pointer', margin: '0 auto', backgroundSize: '10px 10px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000' }} onClick={() => setPreviewImage(newArFramePreview)}>
+                      <img src={newArFramePreview} alt="Queued Frame Preview" style={{ height: '100%', objectFit: 'contain' }} />
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <input
+                      placeholder="Tên khung hình AR (VD: Khung năm mới)..."
+                      style={inputStyle}
+                      value={newArFrameName}
+                      onChange={e => setNewArFrameName(e.target.value)}
+                    />
+                    <input
+                      type="file"
+                      accept=".png"
+                      onChange={e => {
+                        const file = e.target.files?.[0] || null;
+                        setNewArFrameFile(file);
+                        if (file) {
+                          setNewArFramePreview(URL.createObjectURL(file));
+                        } else {
+                          setNewArFramePreview(null);
+                        }
+                      }}
+                      style={{ fontSize: '13px', color: '#888' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddArFrame}
+                      disabled={!newArFrameName || !newArFrameFile}
+                      style={{
+                        padding: '12px', borderRadius: '8px',
+                        background: (!newArFrameName || !newArFrameFile) ? '#333' : 'rgba(0, 229, 255, 0.15)',
+                        color: (!newArFrameName || !newArFrameFile) ? '#666' : '#00e5ff', 
+                        fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s',
+                        border: '1px solid rgba(0, 229, 255, 0.2)'
+                      }}
+                    >
+                      THÊM VÀO HÀNG ĐỢI
+                    </button>
                   </div>
-                )}
+                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <input
-                    placeholder="Tên khung hình (VD: Khung hình năm mới)..."
-                    style={inputStyle}
-                    value={newFrameName}
-                    onChange={e => setNewFrameName(e.target.value)}
-                  />
-                  <input
-                    type="file"
-                    accept=".png"
-                    onChange={e => {
-                      const file = e.target.files?.[0] || null;
-                      setNewFrameFile(file);
-                      if (file) {
-                        setNewFramePreview(URL.createObjectURL(file));
-                      } else {
-                        setNewFramePreview(null);
-                      }
-                    }}
-                    style={{ fontSize: '13px', color: '#888' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddFrame}
-                    disabled={!newFrameName || !newFrameFile}
-                    style={{
-                      padding: '12px', borderRadius: '8px',
-                      background: (!newFrameName || !newFrameFile) ? '#333' : 'rgba(0, 229, 255, 0.15)',
-                      color: (!newFrameName || !newFrameFile) ? '#666' : '#00e5ff', 
-                      fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s',
-                      border: '1px solid rgba(0, 229, 255, 0.2)'
-                    }}
-                  >
-                    THÊM VÀO HÀNG ĐỢI
-                  </button>
+                {/* List */}
+                <div>
+                  <p style={{ ...labelStyle, marginBottom: '16px' }}>CÁC KHUNG HÌNH AR CHỜ ({stagedFrames.filter(f => f.type === 'ar').length})</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {stagedFrames.filter(f => f.type === 'ar').map(frame => (
+                      <div key={frame.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', backgroundSize: '8px 8px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000' }} onClick={() => setPreviewImage(frame.preview)}>
+                          <img 
+                            src={frame.preview} 
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                          />
+                        </div>
+                        <div 
+                          onClick={() => setPreviewImage(frame.preview)}
+                          style={{ flex: 1, fontSize: '13px', fontWeight: 700, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', color: 'white' }}
+                        >
+                          {frame.name}
+                        </div>
+                        <button type="button" onClick={() => handleRemoveStagedFrame(frame.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff5252' }}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    {stagedFrames.filter(f => f.type === 'ar').length === 0 && <div style={{ fontSize: '12px', color: '#7ecfff', fontStyle: 'italic' }}>Nhấn "Thêm vào hàng đợi" để chuẩn bị.</div>}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* List */}
-              <div>
-                <p style={{ ...labelStyle, marginBottom: '16px' }}>CÁC KHUNG HÌNH CHỜ ({stagedFrames.length})</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {stagedFrames.map(frame => (
-                    <div key={frame.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', backgroundSize: '8px 8px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000' }} onClick={() => setPreviewImage(frame.preview)}>
-                        <img 
-                          src={frame.preview} 
-                          style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-                        />
-                      </div>
-                      <div 
-                        onClick={() => setPreviewImage(frame.preview)}
-                        style={{ flex: 1, fontSize: '13px', fontWeight: 700, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', color: 'white' }}
-                      >
-                        {frame.name}
-                      </div>
-                      <button type="button" onClick={() => handleRemoveStagedFrame(frame.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff5252' }}>
-                        ✕
-                      </button>
+            {/* 2. Photobooth Frames Section */}
+            <div>
+              <h2 style={{ color: '#e91e8c', fontSize: '18px', fontWeight: 800, marginBottom: '24px', letterSpacing: '1px' }}>
+                QUẢN LÝ KHUNG PHOTOBOOTH (CHO PHOTOBOOTH)
+              </h2>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '40px' }}>
+                {/* Form Upload */}
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '24px', borderRadius: '12px' }}>
+                  <p style={labelStyle}>THÊM KHUNG PHOTOBOOTH (SẼ TẠO CÙNG SỰ KIỆN)</p>
+                  
+                  {newPbFramePreview && (
+                    <div style={{ width: 'fit-content', minWidth: '100px', maxWidth: '100%', height: '160px', borderRadius: '10px', marginBottom: '16px', overflow: 'hidden', border: '1px solid rgba(233, 30, 140, 0.3)', cursor: 'pointer', margin: '0 auto', backgroundSize: '10px 10px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000' }} onClick={() => setPreviewImage(newPbFramePreview)}>
+                      <img src={newPbFramePreview} alt="Queued Frame Preview" style={{ height: '100%', objectFit: 'contain' }} />
                     </div>
-                  ))}
-                  {stagedFrames.length === 0 && <div style={{ fontSize: '12px', color: '#7ecfff', fontStyle: 'italic' }}>Nhấn "Thêm vào hàng đợi" để chuẩn bị khung hình.</div>}
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <input
+                      placeholder="Tên khung Photobooth (VD: Khung strip Noel)..."
+                      style={inputStyle}
+                      value={newPbFrameName}
+                      onChange={e => setNewPbFrameName(e.target.value)}
+                    />
+                    <input
+                      type="file"
+                      accept=".png"
+                      onChange={e => {
+                        const file = e.target.files?.[0] || null;
+                        setNewPbFrameFile(file);
+                        if (file) {
+                          setNewPbFramePreview(URL.createObjectURL(file));
+                        } else {
+                          setNewPbFramePreview(null);
+                        }
+                      }}
+                      style={{ fontSize: '13px', color: '#888' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddPbFrame}
+                      disabled={!newPbFrameName || !newPbFrameFile}
+                      style={{
+                        padding: '12px', borderRadius: '8px',
+                        background: (!newPbFrameName || !newPbFrameFile) ? '#333' : 'rgba(233, 30, 140, 0.15)',
+                        color: (!newPbFrameName || !newPbFrameFile) ? '#666' : '#e91e8c', 
+                        fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s',
+                        border: '1px solid rgba(233, 30, 140, 0.2)'
+                      }}
+                    >
+                      THÊM VÀO HÀNG ĐỢI
+                    </button>
+                  </div>
+                </div>
+
+                {/* List */}
+                <div>
+                  <p style={{ ...labelStyle, marginBottom: '16px' }}>CÁC KHUNG PHOTOBOOTH CHỜ ({stagedFrames.filter(f => f.type === 'photobooth').length})</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {stagedFrames.filter(f => f.type === 'photobooth').map(frame => (
+                      <div key={frame.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', backgroundSize: '8px 8px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000' }} onClick={() => setPreviewImage(frame.preview)}>
+                          <img 
+                            src={frame.preview} 
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                          />
+                        </div>
+                        <div 
+                          onClick={() => setPreviewImage(frame.preview)}
+                          style={{ flex: 1, fontSize: '13px', fontWeight: 700, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', color: 'white' }}
+                        >
+                          {frame.name}
+                        </div>
+                        <button type="button" onClick={() => handleRemoveStagedFrame(frame.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff5252' }}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    {stagedFrames.filter(f => f.type === 'photobooth').length === 0 && <div style={{ fontSize: '12px', color: '#7ecfff', fontStyle: 'italic' }}>Nhấn "Thêm vào hàng đợi" để chuẩn bị.</div>}
+                  </div>
                 </div>
               </div>
             </div>

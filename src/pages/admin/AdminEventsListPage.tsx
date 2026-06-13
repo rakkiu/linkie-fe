@@ -25,9 +25,15 @@ export default function AdminEventsListPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [frames, setFrames] = useState<ArFrame[]>([]);
   const [loadingFrames, setLoadingFrames] = useState(false);
-  const [newFrameName, setNewFrameName] = useState('');
-  const [newFrameFile, setNewFrameFile] = useState<File | null>(null);
-  const [newFramePreview, setNewFramePreview] = useState<string | null>(null);
+  // AR Frame States
+  const [newArFrameName, setNewArFrameName] = useState('');
+  const [newArFrameFile, setNewArFrameFile] = useState<File | null>(null);
+  const [newArFramePreview, setNewArFramePreview] = useState<string | null>(null);
+
+  // Photobooth Frame States
+  const [newPbFrameName, setNewPbFrameName] = useState('');
+  const [newPbFrameFile, setNewPbFrameFile] = useState<File | null>(null);
+  const [newPbFramePreview, setNewPbFramePreview] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -141,25 +147,44 @@ export default function AdminEventsListPage() {
     setEditThumbnailFile(null);
     setEditThumbnailPreview(null);
     setFrames([]);
-    setNewFrameName('');
-    setNewFrameFile(null);
-    setNewFramePreview(null);
+    setNewArFrameName('');
+    setNewArFrameFile(null);
+    setNewArFramePreview(null);
+    setNewPbFrameName('');
+    setNewPbFrameFile(null);
+    setNewPbFramePreview(null);
     setPreviewImage(null);
   };
 
-  const handleAddFrame = async (e: React.FormEvent) => {
+  const handleAddArFrame = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingId || !newFrameName || !newFrameFile) return;
+    if (!editingId || !newArFrameName || !newArFrameFile) return;
 
     try {
-      await adminEventService.uploadFrame(editingId, newFrameName, newFrameFile);
-      showToast('success', 'Thêm khung hình thành công!');
-      setNewFrameName('');
-      setNewFrameFile(null);
-      setNewFramePreview(null);
+      await adminEventService.uploadFrame(editingId, newArFrameName, newArFrameFile);
+      showToast('success', 'Thêm khung hình AR thành công!');
+      setNewArFrameName('');
+      setNewArFrameFile(null);
+      setNewArFramePreview(null);
       fetchFrames(editingId);
     } catch (err) {
-      showToast('error', 'Không thể thêm khung hình.');
+      showToast('error', 'Không thể thêm khung hình AR.');
+    }
+  };
+
+  const handleAddPbFrame = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId || !newPbFrameName || !newPbFrameFile) return;
+
+    try {
+      await adminEventService.uploadFrame(editingId, `photobooth_${newPbFrameName}`, newPbFrameFile);
+      showToast('success', 'Thêm khung hình Photobooth thành công!');
+      setNewPbFrameName('');
+      setNewPbFrameFile(null);
+      setNewPbFramePreview(null);
+      fetchFrames(editingId);
+    } catch (err) {
+      showToast('error', 'Không thể thêm khung hình Photobooth.');
     }
   };
 
@@ -579,62 +604,121 @@ export default function AdminEventsListPage() {
                   {editThumbnailFile && <div style={{ color: '#00e676', fontSize: '11px', marginTop: '8px', fontWeight: 600 }}>✓ {editThumbnailFile.name}</div>}
                 </div>
 
-                {/* Right Side: AR Frames Section */}
-                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '32px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '1px', color: '#00e5ff', marginBottom: '24px' }}> QUẢN LÝ AR FRAMES </h3>
+                {/* Right Side: AR Frames & Photobooth Section */}
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '32px', display: 'flex', flexDirection: 'column', gap: '32px', maxHeight: '70vh', overflowY: 'auto', width: '360px' }} className="custom-scrollbar">
+                  
+                  {/* 1. AR Frames Section */}
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '1px', color: '#00e5ff', marginBottom: '16px' }}> QUẢN LÝ AR FRAMES </h3>
 
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#00e5ff', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>THÊM KHUNG HÌNH MỚI</p>
-                    
-                    {newFramePreview && (
-                      <div style={{ width: 'fit-content', minWidth: '100px', maxWidth: '100%', height: '140px', background: '#000', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden', border: '1px solid rgba(0, 229, 255, 0.3)', cursor: 'pointer', margin: '0 auto', backgroundSize: '10px 10px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)' }} onClick={() => setPreviewImage(newFramePreview)}>
-                        <img src={newFramePreview} alt="New Frame Preview" style={{ height: '100%', objectFit: 'contain' }} />
+                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <p style={{ margin: '0 0 12px', fontSize: '11px', color: '#00e5ff', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>THÊM KHUNG HÌNH AR</p>
+                      
+                      {newArFramePreview && (
+                        <div style={{ width: 'fit-content', minWidth: '100px', maxWidth: '100%', height: '120px', background: '#000', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden', border: '1px solid rgba(0, 229, 255, 0.3)', cursor: 'pointer', margin: '0 auto', backgroundSize: '10px 10px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)' }} onClick={() => setPreviewImage(newArFramePreview)}>
+                          <img src={newArFramePreview} alt="New AR Frame Preview" style={{ height: '100%', objectFit: 'contain' }} />
+                        </div>
+                      )}
+
+                      <input placeholder="Tên khung AR..." value={newArFrameName} onChange={e => setNewArFrameName(e.target.value)} style={{ ...inputStyle, marginBottom: '10px', background: 'rgba(0,0,0,0.3)', padding: '8px 12px' }} />
+                      <div style={{ marginBottom: '12px' }}> 
+                        <input 
+                          type="file" 
+                          accept=".png" 
+                          onChange={e => {
+                            const file = e.target.files?.[0] || null;
+                            setNewArFrameFile(file);
+                            if (file) {
+                              setNewArFramePreview(URL.createObjectURL(file));
+                            } else {
+                              setNewArFramePreview(null);
+                            }
+                          }} 
+                          style={{ fontSize: '11px', color: '#888' }} 
+                        /> 
                       </div>
-                    )}
-
-                    <input placeholder="Tên khung hình..." value={newFrameName} onChange={e => setNewFrameName(e.target.value)} style={{ ...inputStyle, marginBottom: '10px', background: 'rgba(0,0,0,0.3)', padding: '8px 12px' }} />
-                    <div style={{ marginBottom: '12px' }}> 
-                      <input 
-                        type="file" 
-                        accept=".png" 
-                        onChange={e => {
-                          const file = e.target.files?.[0] || null;
-                          setNewFrameFile(file);
-                          if (file) {
-                            setNewFramePreview(URL.createObjectURL(file));
-                          } else {
-                            setNewFramePreview(null);
-                          }
-                        }} 
-                        style={{ fontSize: '11px', color: '#888' }} 
-                      /> 
+                      <button onClick={handleAddArFrame} disabled={!newArFrameName || !newArFrameFile} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: (!newArFrameName || !newArFrameFile) ? '#333' : 'rgba(0, 229, 255, 0.15)', color: (!newArFrameName || !newArFrameFile) ? '#666' : '#00e5ff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', border: '1px solid rgba(0, 229, 255, 0.2)' }}> TẢI LÊN KHUNG AR </button>
                     </div>
-                    <button onClick={handleAddFrame} disabled={!newFrameName || !newFrameFile} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: (!newFrameName || !newFrameFile) ? '#333' : 'rgba(0, 229, 255, 0.15)', color: (!newFrameName || !newFrameFile) ? '#666' : '#00e5ff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', border: '1px solid rgba(0, 229, 255, 0.2)' }}> TẢI LÊN KHUNG HÌNH </button>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#00e5ff', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>DANH SÁCH AR FRAMES ({frames.filter(f => !f.name.toLowerCase().startsWith('photobooth_')).length})</p>
+                      {loadingFrames && <div style={{ fontSize: '12px', color: '#00e5ff' }}>Đang tải...</div>}
+                      {frames.filter(f => !f.name.toLowerCase().startsWith('photobooth_')).map(frame => (
+                        <div key={frame.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', backgroundSize: '8px 8px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000', border: '1px solid rgba(255,255,255,0.05)' }} onClick={() => setPreviewImage(frame.assetUrl)}>
+                            <img src={frame.assetUrl} alt={frame.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '13px', fontWeight: 800, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setPreviewImage(frame.assetUrl)}>{frame.name}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div onClick={() => handleToggleFrame(frame.id)} style={{ width: '44px', height: '22px', background: frame.isActive ? 'rgba(0, 230, 118, 0.2)' : 'rgba(255, 255, 255, 0.05)', borderRadius: '20px', padding: '2px', cursor: 'pointer', position: 'relative', border: `1px solid ${frame.isActive ? '#00e676' : 'rgba(255,255,255,0.1)'}`, transition: 'all 0.3s ease' }}>
+                              <div style={{ position: 'absolute', left: frame.isActive ? '24px' : '2px', top: '2px', width: '16px', height: '16px', borderRadius: '50%', background: frame.isActive ? '#00e676' : '#666', transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)' }} />
+                            </div>
+                            <button onClick={() => handleDeleteFrame(frame.id, frame.name)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#666' }}> 🗑️ </button>
+                          </div>
+                        </div>
+                      ))}
+                      {!loadingFrames && frames.filter(f => !f.name.toLowerCase().startsWith('photobooth_')).length === 0 && <div style={{ fontSize: '11px', color: '#555', fontStyle: 'italic', textAlign: 'center', padding: '10px' }}>Chưa có khung hình nào.</div>}
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#00e5ff', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>AR FRAME ({frames.length})</p>
-                    {loadingFrames && <div style={{ fontSize: '12px', color: '#00e5ff' }}>Đang tải...</div>}
-                    {frames.map(frame => (
-                      <div key={frame.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                        <div style={{ width: '50px', height: '50px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', backgroundSize: '8px 8px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000', border: '1px solid rgba(255,255,255,0.05)' }} onClick={() => setPreviewImage(frame.assetUrl)}>
-                          <img src={frame.assetUrl} alt={frame.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  {/* 2. Photobooth Frames Section */}
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '1px', color: '#e91e8c', marginBottom: '16px' }}> QUẢN LÝ KHUNG PHOTOBOOTH </h3>
+
+                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <p style={{ margin: '0 0 12px', fontSize: '11px', color: '#e91e8c', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>THÊM KHUNG PHOTOBOOTH</p>
+                      
+                      {newPbFramePreview && (
+                        <div style={{ width: 'fit-content', minWidth: '100px', maxWidth: '100%', height: '120px', background: '#000', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden', border: '1px solid rgba(233, 30, 140, 0.3)', cursor: 'pointer', margin: '0 auto', backgroundSize: '10px 10px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)' }} onClick={() => setPreviewImage(newPbFramePreview)}>
+                          <img src={newPbFramePreview} alt="New Photobooth Frame Preview" style={{ height: '100%', objectFit: 'contain' }} />
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '16px', fontWeight: 800, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setPreviewImage(frame.assetUrl)}>{frame.name}</div>
-                          <div style={{ fontSize: '11px', color: '#00e5ff', marginTop: '2px', fontWeight: 600 }}>AR Frame</div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div onClick={() => handleToggleFrame(frame.id)} style={{ width: '50px', height: '24px', background: frame.isActive ? 'rgba(0, 230, 118, 0.2)' : 'rgba(255, 255, 255, 0.05)', borderRadius: '20px', padding: '2px', cursor: 'pointer', position: 'relative', border: `1px solid ${frame.isActive ? '#00e676' : 'rgba(255,255,255,0.1)'}`, transition: 'all 0.3s ease' }}>
-                            <div style={{ position: 'absolute', left: frame.isActive ? '28px' : '2px', top: '2px', width: '18px', height: '18px', borderRadius: '50%', background: frame.isActive ? '#00e676' : '#666', transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)', boxShadow: frame.isActive ? '0 0 10px rgba(0,230,118,0.5)' : 'none' }} />
-                            <span style={{ position: 'absolute', right: frame.isActive ? 'auto' : '6px', left: frame.isActive ? '6px' : 'auto', fontSize: '8px', fontWeight: 900, color: frame.isActive ? '#00e676' : '#666', lineHeight: '20px', textTransform: 'uppercase' }}> {frame.isActive ? 'BẬT' : 'TẮT'} </span>
-                          </div>
-                          <button onClick={() => handleDeleteFrame(frame.id, frame.name)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#666' }}> 🗑️ </button>
-                        </div>
+                      )}
+
+                      <input placeholder="Tên khung Photobooth..." value={newPbFrameName} onChange={e => setNewPbFrameName(e.target.value)} style={{ ...inputStyle, marginBottom: '10px', background: 'rgba(0,0,0,0.3)', padding: '8px 12px' }} />
+                      <div style={{ marginBottom: '12px' }}> 
+                        <input 
+                          type="file" 
+                          accept=".png" 
+                          onChange={e => {
+                            const file = e.target.files?.[0] || null;
+                            setNewPbFrameFile(file);
+                            if (file) {
+                              setNewPbFramePreview(URL.createObjectURL(file));
+                            } else {
+                              setNewPbFramePreview(null);
+                            }
+                          }} 
+                          style={{ fontSize: '11px', color: '#888' }} 
+                        /> 
                       </div>
-                    ))}
-                    {!loadingFrames && frames.length === 0 && <div style={{ fontSize: '12px', color: '#555', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Chưa có khung hình nào. Hãy tải lên file PNG ở trên.</div>}
+                      <button onClick={handleAddPbFrame} disabled={!newPbFrameName || !newPbFrameFile} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: (!newPbFrameName || !newPbFrameFile) ? '#333' : 'rgba(233, 30, 140, 0.15)', color: (!newPbFrameName || !newPbFrameFile) ? '#666' : '#e91e8c', fontWeight: 700, fontSize: '12px', cursor: 'pointer', border: '1px solid rgba(233, 30, 140, 0.2)' }}> TẢI LÊN KHUNG PHOTOBOOTH </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#e91e8c', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>DANH SÁCH KHUNG PHOTOBOOTH ({frames.filter(f => f.name.toLowerCase().startsWith('photobooth_')).length})</p>
+                      {loadingFrames && <div style={{ fontSize: '12px', color: '#e91e8c' }}>Đang tải...</div>}
+                      {frames.filter(f => f.name.toLowerCase().startsWith('photobooth_')).map(frame => (
+                        <div key={frame.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', backgroundSize: '8px 8px', backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)', backgroundColor: '#000', border: '1px solid rgba(255,255,255,0.05)' }} onClick={() => setPreviewImage(frame.assetUrl)}>
+                            <img src={frame.assetUrl} alt={frame.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '13px', fontWeight: 800, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setPreviewImage(frame.assetUrl)}>{frame.name.replace(/^photobooth_/i, '')}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div onClick={() => handleToggleFrame(frame.id)} style={{ width: '44px', height: '22px', background: frame.isActive ? 'rgba(0, 230, 118, 0.2)' : 'rgba(255, 255, 255, 0.05)', borderRadius: '20px', padding: '2px', cursor: 'pointer', position: 'relative', border: `1px solid ${frame.isActive ? '#00e676' : 'rgba(255,255,255,0.1)'}`, transition: 'all 0.3s ease' }}>
+                              <div style={{ position: 'absolute', left: frame.isActive ? '24px' : '2px', top: '2px', width: '16px', height: '16px', borderRadius: '50%', background: frame.isActive ? '#00e676' : '#666', transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)' }} />
+                            </div>
+                            <button onClick={() => handleDeleteFrame(frame.id, frame.name)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#666' }}> 🗑️ </button>
+                          </div>
+                        </div>
+                      ))}
+                      {!loadingFrames && frames.filter(f => f.name.startsWith('photobooth_')).length === 0 && <div style={{ fontSize: '11px', color: '#555', fontStyle: 'italic', textAlign: 'center', padding: '10px' }}>Chưa có khung hình nào.</div>}
+                    </div>
                   </div>
+
                 </div>
               </div>
             </div>
