@@ -116,6 +116,19 @@ export default function CameraFramePage() {
     };
   }, [facingMode]);
 
+  // Đồng bộ camera stream vào thẻ video khi component đã render xong (loading = false)
+  useEffect(() => {
+    if (!loading && !ticketLoading && streamRef.current && videoRef.current) {
+      const videoEl = videoRef.current;
+      if (videoEl.srcObject !== streamRef.current) {
+        videoEl.srcObject = streamRef.current;
+        videoEl.play().catch(err => {
+          console.warn('Không thể tự động phát video stream:', err);
+        });
+      }
+    }
+  }, [loading, ticketLoading, facingMode]);
+
   const toggleCamera = () => {
     setFacingMode(prev => (prev === 'user' ? 'environment' : 'user'));
   };
