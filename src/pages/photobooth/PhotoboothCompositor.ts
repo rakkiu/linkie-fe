@@ -31,6 +31,17 @@ export const PHOTOBOOTH_LAYOUT_META = {
   }
 };
 
+interface CellRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  isTopEdge: boolean;
+  isBottomEdge: boolean;
+  isLeftEdge: boolean;
+  isRightEdge: boolean;
+}
+
 export class PhotoboothCompositor {
   static readonly canvasWidth = 1080;
   static readonly canvasHeight = 1920;
@@ -41,7 +52,7 @@ export class PhotoboothCompositor {
   static readonly paddingBottom = 280.0;// Lề dưới lớn (để footer, sticker, QR...)
   static readonly paddingSide = 56.0;   // Lề trái phải (để chữ chạy dọc)
   
-  private static readonly cornerRadius = 16.0;
+  private static readonly cornerRadius = 0.0;
 
   /** Helper load an image from URL / Base64 */
   static loadImage(src: string): Promise<HTMLImageElement> {
@@ -114,8 +125,8 @@ export class PhotoboothCompositor {
   }
 
   /** Calculate cell rectangle bounds based on layout */
-  private static getCellRects(layout: PhotoboothLayout): { x: number; y: number; w: number; h: number }[] {
-    const rects: { x: number; y: number; w: number; h: number }[] = [];
+  private static getCellRects(layout: PhotoboothLayout): CellRect[] {
+    const rects: CellRect[] = [];
     const W = this.canvasWidth;
     const H = this.canvasHeight;
     const gap = this.gap;
@@ -129,7 +140,16 @@ export class PhotoboothCompositor {
       const cellH = (H - pT - pB - totalGaps) / 2;
       for (let row = 0; row < 2; row++) {
         const y = pT + row * (cellH + gap);
-        rects.push({ x: pS, y, w: cellW, h: cellH });
+        rects.push({
+          x: pS,
+          y,
+          w: cellW,
+          h: cellH,
+          isTopEdge: row === 0,
+          isBottomEdge: row === 1,
+          isLeftEdge: true,
+          isRightEdge: true
+        });
       }
     } else if (layout === 'grid2x2') {
       const cellW = (W - pS * 2 - gap) / 2;
@@ -138,7 +158,16 @@ export class PhotoboothCompositor {
         for (let col = 0; col < 2; col++) {
           const x = pS + col * (cellW + gap);
           const y = pT + row * (cellH + gap);
-          rects.push({ x, y, w: cellW, h: cellH });
+          rects.push({
+            x,
+            y,
+            w: cellW,
+            h: cellH,
+            isTopEdge: row === 0,
+            isBottomEdge: row === 1,
+            isLeftEdge: col === 0,
+            isRightEdge: col === 1
+          });
         }
       }
     } else if (layout === 'grid2x4') {
@@ -149,7 +178,16 @@ export class PhotoboothCompositor {
         for (let col = 0; col < 2; col++) {
           const x = pS + col * (cellW + gap);
           const y = pT + row * (cellH + gap);
-          rects.push({ x, y, w: cellW, h: cellH });
+          rects.push({
+            x,
+            y,
+            w: cellW,
+            h: cellH,
+            isTopEdge: row === 0,
+            isBottomEdge: row === 3,
+            isLeftEdge: col === 0,
+            isRightEdge: col === 1
+          });
         }
       }
     }
@@ -160,36 +198,49 @@ export class PhotoboothCompositor {
   private static drawPhotoInCell(
     ctx: CanvasRenderingContext2D,
     img: HTMLImageElement,
-    cell: { x: number; y: number; w: number; h: number },
+    cell: CellRect,
     _flipHorizontal: boolean
   ) {
     ctx.save();
 
-    // 1) Clip rounded rectangle path
-    ctx.beginPath();
-    ctx.roundRect(cell.x, cell.y, cell.w, cell.h, this.cornerRadius);
-    ctx.clip();
+    // Định nghĩa lượng bleed khác nhau giữa mép ngoài và mép trong (gap)
+    const outerBleed = 40.0; // Tràn mạnh 40px ở các mép tiếp giáp khung viền ngoài để đảm bảo che hết vạch đen
+    const innerBleed = 0.0;  // Không tràn ở các mép trong để giữ nguyên vẹn đường line ở giữa
 
-    // 2) Calculate cover fit (crop to fill)
+    const bleedTop = cell.isTopEdge ? outerBleed : innerBleed;
+    const bleedBottom = cell.isBottomEdge ? outerBleed : innerBleed;
+    const bleedLeft = cell.isLeftEdge ? outerBleed : innerBleed;
+    const bleedRight = cell.isRightEdge ? outerBleed : innerBleed;
+
+    const drawX = cell.x - bleedLeft;
+    const drawY = cell.y - bleedTop;
+    const drawW = cell.w + bleedLeft + bleedRight;
+    const drawH = cell.h + bleedTop + bleedBottom;
+
+    // 1) Clip rounded rectangle path (chỉ clip khi có bo góc > 0)
+    if (this.cornerRadius > 0) {
+      ctx.beginPath();
+      ctx.roundRect(drawX, drawY, drawW, drawH, this.cornerRadius);
+      ctx.clip();
+    }
+
+    // 2) Calculate cover fit (crop to fill) theo kích thước vẽ thực tế
     const imgAspect = img.width / img.height;
-    const cellAspect = cell.w / cell.h;
+    const drawAspect = drawW / drawH;
 
     let sx = 0, sy = 0, sw = img.width, sh = img.height;
-    if (imgAspect > cellAspect) {
+    if (imgAspect > drawAspect) {
       // Image is wider than cell - crop horizontal sides
-      sw = img.height * cellAspect;
+      sw = img.height * drawAspect;
       sx = (img.width - sw) / 2;
     } else {
       // Image is taller than cell - crop vertical top/bottom
-      sh = img.width / cellAspect;
+      sh = img.width / drawAspect;
       sy = (img.height - sh) / 2;
     }
 
-    // 3) Khong ap dung lat anh o buoc compositing vi da duoc xu ly qua canvas CaptureScreen
-    // Remove ctx.scale(-1, 1) to fix mirror bug
-
-    // 4) Draw the cropped and optionally flipped image
-    ctx.drawImage(img, sx, sy, sw, sh, cell.x, cell.y, cell.w, cell.h);
+    // 4) Draw the cropped image with bleed coordinates
+    ctx.drawImage(img, sx, sy, sw, sh, drawX, drawY, drawW, drawH);
 
     ctx.restore();
 
