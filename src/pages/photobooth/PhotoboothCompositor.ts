@@ -65,7 +65,7 @@ export class PhotoboothCompositor {
     });
   }
 
-  /** Main composite function using HTML5 Canvas. */
+  /** Main composite function using HTML5 Canvas */
   static async compositePhotobooth({
     photos,
     layout,
