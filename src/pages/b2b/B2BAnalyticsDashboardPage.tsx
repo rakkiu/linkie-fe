@@ -13,6 +13,8 @@ interface RecentFeedback { authorName: string; starRating: number; comment: stri
 interface DashboardSummary {
   totalParticipants: number;
   totalPhotos: number;
+  totalShares: number;
+  totalTimelapses: number;
   averageRating: number;
   totalReviews: number;
   ratingDistribution: RatingDistItem[];

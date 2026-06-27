@@ -121,4 +121,20 @@ export const eventService = {
       console.warn('Failed to record event action:', error);
     }
   },
+
+  /** POST — Gửi đánh giá cho sự kiện */
+  submitRating: async (eventId: string, score: number, feedback?: string): Promise<void> => {
+    const response = await apiClient.post(`/events/${eventId}/rating`, { score, feedback });
+    return response.data;
+  },
+
+  /** GET — Kiểm tra xem thiết bị/user đã đánh giá chưa */
+  checkRatingStatus: async (eventId: string): Promise<boolean> => {
+    try {
+      const response = await apiClient.get(`/events/${eventId}/rating/status`);
+      return response.data?.hasRated || false;
+    } catch {
+      return false;
+    }
+  },
 };
