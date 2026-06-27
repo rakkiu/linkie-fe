@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import { eventService, type PublicEvent } from '../services/eventService';
 import { wishwallApi, createWishwallConnection } from '../services/wishwallService';
 import { useTicketVerification } from '../hooks/useTicketVerification';
+import RatingModal from '../components/RatingModal';
 
 interface Bubble {
   id: string | number;
@@ -12,7 +13,6 @@ interface Bubble {
   startY: number;
   sentiment?: 'Positive' | 'Neutral' | 'Negative';
 }
-
 
 export default function WishwallPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,12 +23,17 @@ export default function WishwallPage() {
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
-  const [history, setHistory] = useState<any[]>([]); // To store recent message objects
+  const [history, setHistory] = useState<any[]>([]);
   const [isTrayOpen, setIsTrayOpen] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const connRef = useRef<any>(null);
 
-  // ── Fetch Event ───────────────────────────────────────────────────────────
+  // Rating Modal state
+  const [hasRated, setHasRated] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState('');
+
+  // ── Fetch Event & Rating Status ───────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
@@ -135,15 +140,12 @@ export default function WishwallPage() {
     setBubbles(prev => prev.filter(b => b.id !== bubbleId));
   }, []);
 
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
-    if (!text || !id) return;
-
+  const sendMessageWithText = async (textToSend: string) => {
     // 1. Optimistic update: Add local bubble so it floats immediately
     const tempId = `local-${Date.now()}`;
     const bubble: Bubble = {
       id: tempId,
-      text,
+      text: textToSend,
       x: 10 + Math.random() * 55,
       startY: 60 + Math.random() * 20,
     };
@@ -152,7 +154,7 @@ export default function WishwallPage() {
     // 2. Add to history for immediate feedback
     const optimisticMsg = {
       id: tempId,
-      message: text,
+      message: textToSend,
       userName: 'Vui lòng chờ duyệt',
       createdAt: new Date().toISOString()
     };
@@ -161,7 +163,7 @@ export default function WishwallPage() {
 
     // 3. Send to server
     try {
-      const res = await wishwallApi.sendMessage(id, text);
+      const res = await wishwallApi.sendMessage(id!, textToSend);
       const resData = res.data as any;
       const newMessage = resData.data || resData;
       console.log('SendMessage success:', newMessage);
@@ -176,7 +178,36 @@ export default function WishwallPage() {
       console.error('Failed to send message:', err);
       alert('Không thể gửi tin nhắn. Vui lòng kiểm tra kết nối mạng.');
     }
-  }, [input, id]);
+  };
+
+  const handleSendMessageClick = async () => {
+    const text = input.trim();
+    if (!text || !id) return;
+
+    if (hasRated) {
+      sendMessageWithText(text);
+      return;
+    }
+    
+    try {
+      const rated = await eventService.checkRatingStatus(id);
+      if (rated) {
+        setHasRated(true);
+        sendMessageWithText(text);
+      } else {
+        setPendingMessage(text);
+        setShowRatingModal(true);
+      }
+    } catch {
+      setPendingMessage(text);
+      setShowRatingModal(true);
+    }
+  };
+
+  const sendMessage = useCallback(async () => {
+    handleSendMessageClick();
+  }, [input, id, hasRated]);
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') sendMessage();
@@ -216,6 +247,20 @@ export default function WishwallPage() {
 
   return (
     <div className="bg-[#0d1117] h-[100dvh] w-full text-white relative overflow-hidden flex flex-col">
+      {showRatingModal && event?.id && (
+        <RatingModal 
+          eventId={event.id} 
+          onSuccess={() => {
+            setShowRatingModal(false);
+            setHasRated(true);
+            if (pendingMessage) {
+              sendMessageWithText(pendingMessage);
+              setPendingMessage('');
+            }
+          }} 
+        />
+      )}
+
       {/* ── Navbar (Fixed/Absolute) ────────────────── */}
       <div className="absolute top-0 left-0 right-0 z-50">
         <Navbar />

@@ -106,4 +106,19 @@ export const eventService = {
       console.error('Failed to record frame usage (silent):', error);
     }
   },
+
+  /** POST — Ghi nhận hành động chung (Share, Timelapse) */
+  recordEventAction: async (eventId: string, actionType: string): Promise<void> => {
+    try {
+      await fetch(`${BASE_URL}/events/${eventId}/analytics/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ actionType })
+      });
+    } catch (error) {
+      console.warn('Failed to record event action:', error);
+    }
+  },
 };

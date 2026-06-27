@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { eventService, type PublicEvent, type ArFrame } from '../services/eventService';
 import { useTicketVerification } from '../hooks/useTicketVerification';
+import RatingModal from '../components/RatingModal';
 
 const LKCaptureButton = () => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -41,6 +42,10 @@ export default function CameraFramePage() {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [showFramePicker, setShowFramePicker] = useState(false);
 
+  // Rating Modal state
+  const [hasRated, setHasRated] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+
   // ── Fetch Event & Frames ───────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
@@ -53,7 +58,14 @@ export default function CameraFramePage() {
         ]);
         if (isMounted) {
           setEvent(evtData);
-          setFrames(framesData.filter(f => !f.name.toLowerCase().startsWith('photobooth_')));
+          setFrames(framesData.filter(f => !f.name.startsWith('[PB]')));
+        }
+        
+        try {
+          const rated = await eventService.checkRatingStatus(id);
+          if (isMounted) setHasRated(rated);
+        } catch {
+          // ignore error
         }
       } catch {
         // fail silently
@@ -179,6 +191,30 @@ export default function CameraFramePage() {
     img.src = frame.assetUrl;
   }, [frames, selectedFrameIdx, event, id, facingMode]);
 
+  const handleDownloadClick = async () => {
+    if (hasRated) {
+      handleCapture();
+      return;
+    }
+    try {
+      const rated = await eventService.checkRatingStatus(id!);
+      if (rated) {
+        setHasRated(true);
+        handleCapture();
+      } else {
+        setShowRatingModal(true);
+      }
+    } catch {
+      setShowRatingModal(true); // fallback to showing modal if API fails
+    }
+  };
+
+  const handleRatingSuccess = () => {
+    setShowRatingModal(false);
+    setHasRated(true);
+    handleCapture();
+  };
+
   if (loading || ticketLoading) {
     return (
       <div className="bg-[#0d1117] min-h-screen text-white flex items-center justify-center">
@@ -229,6 +265,10 @@ export default function CameraFramePage() {
   return (
     <div className="bg-[#0d1117] min-h-screen text-white flex flex-col overflow-hidden">
       <Navbar />
+
+      {showRatingModal && event?.id && (
+        <RatingModal eventId={event.id} onSuccess={handleRatingSuccess} />
+      )}
 
       {/* ── Header ──────────────────────────────────── */}
       <div className="pt-16 px-5 pb-1 shrink-0">
@@ -328,7 +368,7 @@ export default function CameraFramePage() {
 
         {/* Center: Capture */}
         <button
-          onClick={handleCapture}
+          onClick={handleDownloadClick}
           disabled={!!cameraError || frames.length === 0}
           className="active:scale-95 transition-transform disabled:opacity-30 disabled:grayscale relative"
         >
