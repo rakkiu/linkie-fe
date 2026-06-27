@@ -262,6 +262,8 @@ export default function B2BAnalyticsDashboardPage() {
         setSummary({
           totalParticipants: raw.totalParticipants ?? 0,
           totalPhotos:       raw.totalPhotos ?? raw.totalFrameUsages ?? 0,
+          totalShares:       raw.totalShares ?? 0,
+          totalTimelapses:   raw.totalTimelapses ?? 0,
           averageRating:     raw.averageRating ?? 0,
           totalReviews:      raw.totalReviews  ?? 0,
           ratingDistribution: ratingDist,
