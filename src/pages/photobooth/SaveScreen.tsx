@@ -192,6 +192,11 @@ export default function SaveScreen({
         // Giải phóng bộ nhớ
         setTimeout(() => URL.revokeObjectURL(videoUrl), 1000);
 
+        // Ghi nhận lượt tạo Timelapse
+        eventService.recordEventAction(eventId, 'timelapse').catch((err) => {
+          console.error('Failed to record timelapse action:', err);
+        });
+
         setSavedTimelapse(true);
         setSavingTimelapse(false);
       };
@@ -230,6 +235,11 @@ export default function SaveScreen({
         await navigator.clipboard.writeText(window.location.href);
         alert('Đã sao chép liên kết trang sự kiện vào bộ nhớ tạm! Bạn có thể gửi để chia sẻ.');
       }
+      
+      // Ghi nhận lượt Share thành công
+      eventService.recordEventAction(eventId, 'share').catch((err) => {
+        console.error('Failed to record share action:', err);
+      });
     } catch (err) {
       console.log('User cancelled or browser unsupported share:', err);
     }

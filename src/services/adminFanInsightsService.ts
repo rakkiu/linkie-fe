@@ -40,6 +40,8 @@ export interface DashboardSummary {
   totalPhotos: number;
   totalPhotographers: number;
   activeFramesCount: number;
+  totalShares: number;
+  totalTimelapses: number;
   frameUsageStats: FrameStats[];
   sentimentSummary: Record<string, number>;
   recentLiveMessages: LiveMessage[];

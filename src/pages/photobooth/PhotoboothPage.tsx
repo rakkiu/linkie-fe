@@ -50,8 +50,8 @@ export default function PhotoboothPage() {
         if (isMounted) {
           setEvent(evtData);
           const pbFrames = framesData
-            .filter(f => f.name.toLowerCase().startsWith('photobooth_'))
-            .map(f => ({ ...f, name: f.name.replace(/^photobooth_/i, '') }));
+            .filter(f => f.name.startsWith('[PB]'))
+            .map(f => ({ ...f, name: f.name.startsWith('[PB] ') ? f.name.substring(5) : f.name }));
           setFrames(pbFrames);
           if (pbFrames.length > 0) {
             setSelectedFrame(pbFrames[0]);

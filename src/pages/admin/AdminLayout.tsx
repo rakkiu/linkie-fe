@@ -6,7 +6,7 @@ import logoLinkieWhite from '../../image/logo-linkie-white.png';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  activePage: 'dashboard' | 'events' | 'fan-insights' | 'report' | 'create-event' | 'wishwall' | 'led' | 'tickets';
+  activePage: 'dashboard' | 'events' | 'fan-insights' | 'report' | 'create-event' | 'wishwall' | 'led' | 'tickets' | 'organizers' | 'pricing-requests';
 }
 
 export default function AdminLayout({ children, activePage }: AdminLayoutProps) {
@@ -25,6 +25,8 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
     { id: 'fan-insights', label: 'TÌM HIỂU FAN', path: '/admin/fan-insights', roles: ['admin'] },
     { id: 'report', label: 'BÁO CÁO', path: '/admin/report', roles: ['admin'] },
     { id: 'tickets', label: 'QUẢN LÝ VÉ', path: '/admin/tickets', roles: ['admin'] },
+    { id: 'organizers', label: 'ORGANIZER B2B', path: '/admin/organizers', roles: ['admin'] },
+    { id: 'pricing-requests', label: 'DUYỆT HỢP TÁC', path: '/admin/pricing-requests', roles: ['admin'] },
     { id: 'wishwall', label: 'DUYỆT WISHWALL', path: '/staff/wishwall', roles: ['staff'] },
     { id: 'led', label: 'MÀN HÌNH LED', path: '/led', roles: ['led'] },
   ];
