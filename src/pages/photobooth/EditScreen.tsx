@@ -8,6 +8,22 @@ import type {
 } from './PhotoboothCompositor';
 import { PhotoboothCompositor } from './PhotoboothCompositor';
 
+// Polyfill for Canvas roundRect (iOS < 16)
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, w: number, h: number, r: number) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.beginPath();
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+    return this;
+  };
+}
+
 interface EditScreenProps {
   layout: PhotoboothLayout;
   selectedPhotos: string[];
@@ -467,7 +483,7 @@ export default function EditScreen({
       </div>
 
       {/* ── Sticker Panel ───────────────────────────── */}
-      <div className="px-6 py-2 shrink-0 bg-[#161B22]/50 backdrop-blur-md border border-white/5 mx-4 rounded-3xl">
+      <div className="px-6 py-2 shrink-0 bg-[#161B22] border border-white/5 mx-4 rounded-3xl">
         <div className="flex border-b border-white/5 text-center text-xs font-bold">
           <button
             onClick={() => setActiveTab('emoji')}

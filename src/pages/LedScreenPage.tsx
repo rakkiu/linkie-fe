@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createWishwallConnection, wishwallApi } from '../services/wishwallService';
 import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
@@ -7,6 +7,7 @@ import type { LedDisplayMessage } from '../types/wishwall';
 
 interface DisplayMessageWithTime extends LedDisplayMessage {
   addedAt: number;
+  colIndex: number;
 }
 
 export default function LedScreenPage() {
@@ -22,6 +23,7 @@ export default function LedScreenPage() {
   const [currentEvent, setCurrentEvent] = useState<PublicEvent | null>(null);
   const [ledDuration, setLedDuration] = useState<number>(30); // Default 30s
   const [isShattering, setIsShattering] = useState<boolean>(false);
+  const [isCleared, setIsCleared] = useState<boolean>(false);
 
   const connRef = useRef<ReturnType<typeof createWishwallConnection> | null>(null);
 
@@ -44,25 +46,47 @@ export default function LedScreenPage() {
     }
   }, [eventId]);
 
+  // ── Fetch latest messages ────────────────────────────────────────────────────
+  const fetchLatestMessages = useCallback(async () => {
+    if (!eventId) return;
+    try {
+      const res = await wishwallApi.getMessages(eventId);
+      const data = res.data?.data || [];
+      if (data.length === 0) return;
+
+      // Map with current time as addedAt and balanced random colIndex
+      const mapped = data.slice(0, 10).map((m: LedDisplayMessage, idx: number) => ({
+        ...m,
+        addedAt: Date.now(),
+        colIndex: idx % 3 // Distribute evenly initially
+      }));
+      // Shuffle the colIndex assignments so it doesn't look like a strict pattern
+      for (let i = mapped.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = mapped[i].colIndex;
+        mapped[i].colIndex = mapped[j].colIndex;
+        mapped[j].colIndex = temp;
+      }
+      setMessages(mapped);
+    } catch (err) {
+      console.error('Failed to load initial wishwall messages:', err);
+    }
+  }, [eventId]);
+
   // ── Initial load of approved messages ──────────────────────────────────────
   useEffect(() => {
-    if (!eventId) return;
-    const loadMessages = async () => {
-      try {
-        const res = await wishwallApi.getMessages(eventId);
-        const data = res.data?.data || [];
-        // Map with current time as addedAt
-        const mapped = data.slice(0, 10).map((m: LedDisplayMessage) => ({
-          ...m,
-          addedAt: Date.now()
-        }));
-        setMessages(mapped);
-      } catch (err) {
-        console.error('Failed to load initial wishwall messages:', err);
-      }
-    };
-    loadMessages();
-  }, [eventId]);
+    fetchLatestMessages();
+  }, [fetchLatestMessages]);
+
+  // ── Auto-refill when empty ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (messages.length === 0 && !isShattering && !isCleared && eventId) {
+      const timer = setTimeout(() => {
+        fetchLatestMessages();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [messages.length, isShattering, isCleared, eventId, fetchLatestMessages]);
 
   // ── Auto-cleanup of expired messages ───────────────────────────────────────
   useEffect(() => {
@@ -90,14 +114,23 @@ export default function LedScreenPage() {
     conn.start().then(() => conn.invoke('JoinLed', eventId).catch(() => {}));
     
     conn.on('LedDisplay', (payload: LedDisplayMessage) => {
+      setIsCleared(false); // Reset clear state when new message arrives
       setMessages(prev => {
         if (prev.some(m => m.id === payload.id)) {
           return prev;
         }
+        // Find the column(s) with the fewest items to keep it balanced but random
+        const colCounts = [0, 0, 0];
+        prev.forEach(m => colCounts[m.colIndex]++);
+        const minCount = Math.min(...colCounts);
+        const availableCols = [0, 1, 2].filter(c => colCounts[c] === minCount);
+        const randomCol = availableCols[Math.floor(Math.random() * availableCols.length)];
+
         // Insert new message at the top and limit to 10
         const newMessage: DisplayMessageWithTime = {
           ...payload,
-          addedAt: Date.now()
+          addedAt: Date.now(),
+          colIndex: randomCol
         };
         return [newMessage, ...prev].slice(0, 10);
       });
@@ -109,6 +142,7 @@ export default function LedScreenPage() {
 
     conn.on('LedClear', () => {
       console.log('SignalR LedClear received - triggering shatter effect...');
+      setIsCleared(true); // Prevent auto-refill
       setIsShattering(true);
       setTimeout(() => {
         setMessages([]);
@@ -284,8 +318,9 @@ export default function LedScreenPage() {
         }
 
         .wall-grid {
-          column-count: 3;
-          column-gap: 24px;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 24px;
           height: 100%;
           padding-top: 24px;
           padding-bottom: 24px;
@@ -411,85 +446,87 @@ export default function LedScreenPage() {
           <div className="flex-1 mt-[24px] pb-[80px] overflow-visible">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-white/20">
-                <div className="w-10 h-10 border-2 border-[#00e5ff] border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-xl font-bold tracking-wider font-['Outfit']">Waiting for wishes...</p>
+                {/* No messages */}
               </div>
             ) : (
               <div className="wall-grid">
-                {messages.map((msg, idx) => {
-                  const isPositive = msg.sentiment === 'Positive';
-                  const isFeatured = isPositive && idx % 3 === 0; // Simulate featured logic if needed
-                  
-                  const animDelay = `${-((idx * 1.4) % 6)}s`;
-                  const isFlashed = activeFlashId === msg.id;
+                {[0, 1, 2].map(colIdx => (
+                  <div key={colIdx} className="flex flex-col gap-[24px]">
+                    {messages.filter(m => m.colIndex === colIdx).map((msg, idx) => {
+                      const isPositive = msg.sentiment === 'Positive';
+                      const isFeatured = isPositive && idx % 3 === 0; // Simulate featured logic if needed
+                      
+                      const animDelay = `${-((idx * 1.4) % 6)}s`;
+                      const isFlashed = activeFlashId === msg.id;
 
-                  // Determine entry and shatter animation classes
-                  let animClass = 'floating-anim';
-                  const now = Date.now();
-                  if (now - msg.addedAt < 2000) {
-                    animClass = 'slide-down-entry';
-                  }
+                      // Determine entry and shatter animation classes
+                      let animClass = 'floating-anim';
+                      const now = Date.now();
+                      if (now - msg.addedAt < 2000) {
+                        animClass = 'slide-down-entry';
+                      }
 
-                  let shatterClass = '';
-                  if (isShattering) {
-                    shatterClass = idx % 2 === 0 ? 'shattering-card-even' : 'shattering-card-odd';
-                  }
+                      let shatterClass = '';
+                      if (isShattering) {
+                        shatterClass = idx % 2 === 0 ? 'shattering-card-even' : 'shattering-card-odd';
+                      }
 
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`glass-card ${isFeatured ? 'pink-glow' : 'cyan-glow'} rounded-[24px] ${animClass} ${shatterClass} ${isFeatured ? 'p-[20px]' : 'p-[24px]'} ${isFlashed ? 'brightness-150 scale-[1.05] shadow-[0_0_20px_rgba(0,229,255,0.7)]' : ''}`}
-                      style={{ animationDuration: '8s', transformOrigin: 'center', animationDelay: animClass === 'slide-down-entry' ? '0s' : animDelay }}
-                      onMouseMove={(e) => {
-                        if (isShattering) return;
-                        const card = e.currentTarget;
-                        const rect = card.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
-                        const centerX = rect.width / 2;
-                        const centerY = rect.height / 2;
-                        const rotateX = (y - centerY) / 30;
-                        const rotateY = (centerX - x) / 30;
-                        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-                      }}
-                      onMouseLeave={(e) => {
-                        if (isShattering) return;
-                        e.currentTarget.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
-                      }}
-                    >
-                      {isFeatured ? (
-                        <>
-                          <div>
-                            <div className="flex justify-between items-start mb-[24px]">
-                              <span className="featured-badge text-[10px] font-bold px-2 py-1 rounded text-white flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[14px]">star</span> Featured
-                              </span>
-                              <span className="material-symbols-outlined text-[#ec4899]">favorite</span>
-                            </div>
-                            <p className="font-['Outfit'] text-[20px] leading-[28px] font-semibold text-white leading-tight">"{msg.message}"</p>
-                          </div>
-                          <div className="flex items-center gap-[12px] mt-[24px]">
-                            <div className="w-10 h-10 rounded-full border-2 border-[#ec4899] p-[2px]">
-                              <img className="w-full h-full object-cover rounded-full" src={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.userName)}&background=0d1117&color=ec4899`} alt={msg.userName} />
-                            </div>
-                            <div>
-                              <p className="font-['Inter'] text-[12px] leading-[16px] font-semibold text-white">{msg.userName}</p>
-                              <p className="text-[10px] text-[#ec4899] uppercase tracking-tighter">VIP Attendee</p>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <p className="font-['Inter'] text-[18px] leading-[28px] font-normal text-[#e5e2e1]">"{msg.message}"</p>
-                          <div className="flex items-center justify-between mt-[24px] border-t border-white/5 pt-[12px]">
-                            <p className="font-['Inter'] text-[12px] leading-[16px] font-semibold text-[#bbc9cf]">— {msg.userName}</p>
-                            <span className={`text-[10px] font-bold uppercase ${msg.sentiment === 'Positive' ? 'text-[#00e5ff]' : 'text-white/40 tracking-widest'}`}>{msg.sentiment}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`glass-card ${isFeatured ? 'pink-glow' : 'cyan-glow'} rounded-[24px] ${animClass} ${shatterClass} ${isFeatured ? 'p-[20px]' : 'p-[24px]'} ${isFlashed ? 'brightness-150 scale-[1.05] shadow-[0_0_20px_rgba(0,229,255,0.7)]' : ''}`}
+                          style={{ animationDuration: '8s', transformOrigin: 'center', animationDelay: animClass === 'slide-down-entry' ? '0s' : animDelay }}
+                          onMouseMove={(e) => {
+                            if (isShattering) return;
+                            const card = e.currentTarget;
+                            const rect = card.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const y = e.clientY - rect.top;
+                            const centerX = rect.width / 2;
+                            const centerY = rect.height / 2;
+                            const rotateX = (y - centerY) / 30;
+                            const rotateY = (centerX - x) / 30;
+                            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+                          }}
+                          onMouseLeave={(e) => {
+                            if (isShattering) return;
+                            e.currentTarget.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
+                          }}
+                        >
+                          {isFeatured ? (
+                            <>
+                              <div>
+                                <div className="flex justify-between items-start mb-[24px]">
+                                  <span className="featured-badge text-[10px] font-bold px-2 py-1 rounded text-white flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[14px]">star</span> Featured
+                                  </span>
+                                  <span className="material-symbols-outlined text-[#ec4899]">favorite</span>
+                                </div>
+                                <p className="font-['Outfit'] text-[20px] leading-[28px] font-semibold text-white leading-tight">"{msg.message}"</p>
+                              </div>
+                              <div className="flex items-center gap-[12px] mt-[24px]">
+                                <div className="w-10 h-10 rounded-full border-2 border-[#ec4899] p-[2px]">
+                                  <img className="w-full h-full object-cover rounded-full" src={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.userName)}&background=0d1117&color=ec4899`} alt={msg.userName} />
+                                </div>
+                                <div>
+                                  <p className="font-['Inter'] text-[12px] leading-[16px] font-semibold text-white">{msg.userName}</p>
+                                  <p className="text-[10px] text-[#ec4899] uppercase tracking-tighter">VIP Attendee</p>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-['Inter'] text-[18px] leading-[28px] font-normal text-[#e5e2e1]">"{msg.message}"</p>
+                              <div className="flex items-center justify-between mt-[24px] border-t border-white/5 pt-[12px]">
+                                <p className="font-['Inter'] text-[12px] leading-[16px] font-semibold text-[#bbc9cf]">— {msg.userName}</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             )}
           </div>

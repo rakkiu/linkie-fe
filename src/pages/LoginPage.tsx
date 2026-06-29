@@ -150,6 +150,17 @@ export default function LoginPage() {
           </div>
         </form>
 
+        <p className="text-center text-gray-400 text-sm mt-6">
+          Chưa có tài khoản?{' '}
+          <button 
+            type="button" 
+            onClick={() => navigate('/register')} 
+            className="text-[#00bcd4] font-semibold hover:underline"
+          >
+            Đăng ký ngay
+          </button>
+        </p>
+
         {/* Disclaimer */}
         <p className="text-center text-gray-500 text-[10px] mt-6 leading-relaxed">
           Bằng việc đăng nhập, bạn đồng ý với Điều khoản dịch vụ<br />

@@ -3,6 +3,7 @@ import type { ArFrame } from '../../services/eventService';
 import { ensureImageUrl, eventService } from '../../services/eventService';
 import { PhotoboothCompositor } from './PhotoboothCompositor';
 import type { PhotoboothLayout, StickerItem } from './PhotoboothCompositor';
+import RatingModal from '../../components/RatingModal';
 
 interface SaveScreenProps {
   eventId: string;
@@ -40,6 +41,21 @@ export default function SaveScreen({
   const [savingTimelapse, setSavingTimelapse] = useState(false);
   const [savedTimelapse, setSavedTimelapse] = useState(false);
   const [timelapseError, setTimelapseError] = useState('');
+  const [showRatingModal, setShowRatingModal] = useState(false);
+
+  // Helper to trigger rating modal
+  const triggerRatingCheck = () => {
+    setTimeout(async () => {
+      try {
+        const hasRated = await eventService.checkRatingStatus(eventId);
+        if (!hasRated) {
+          setShowRatingModal(true);
+        }
+      } catch (err) {
+        setShowRatingModal(true);
+      }
+    }, 1500);
+  };
 
   // ── Đổi Khung AR trực tiếp ──────────────────────────────────────────────────
   const handleChangeFrame = async (newFrame: ArFrame | null) => {
@@ -88,6 +104,7 @@ export default function SaveScreen({
       }
 
       setSavedPhoto(true);
+      triggerRatingCheck();
     } catch (err) {
       console.error('Failed to save photo:', err);
       alert('Không thể lưu ảnh.');
@@ -240,6 +257,7 @@ export default function SaveScreen({
       eventService.recordEventAction(eventId, 'share').catch((err) => {
         console.error('Failed to record share action:', err);
       });
+      triggerRatingCheck();
     } catch (err) {
       console.log('User cancelled or browser unsupported share:', err);
     }
@@ -444,6 +462,12 @@ export default function SaveScreen({
         </button>
       </div>
 
+      {showRatingModal && eventId && (
+        <RatingModal 
+          eventId={eventId} 
+          onSuccess={() => setShowRatingModal(false)} 
+        />
+      )}
     </div>
   );
 }
