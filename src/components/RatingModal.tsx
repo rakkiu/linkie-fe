@@ -23,7 +23,9 @@ export default function RatingModal({ eventId, onSuccess }: RatingModalProps) {
       }, 1500); // Wait 1.5s then proceed
     } catch (error) {
       console.error('Lỗi khi gửi đánh giá:', error);
-      alert('Đã có lỗi xảy ra. Vui lòng thử lại.');
+      const err = error as any;
+      const errMsg = err.response?.data?.message || 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+      alert(errMsg);
       setSubmitting(false);
     }
   };

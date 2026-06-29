@@ -124,7 +124,7 @@ export const eventService = {
 
   /** POST — Gửi đánh giá cho sự kiện */
   submitRating: async (eventId: string, score: number, feedback?: string): Promise<void> => {
-    const response = await apiClient.post(`/events/${eventId}/rating`, { score, feedback });
+    const response = await apiClient.post(`/events/${eventId}/rating`, { starRating: score, feedback });
     return response.data;
   },
 
@@ -132,7 +132,7 @@ export const eventService = {
   checkRatingStatus: async (eventId: string): Promise<boolean> => {
     try {
       const response = await apiClient.get(`/events/${eventId}/rating/status`);
-      return response.data?.hasRated || false;
+      return response.data?.data ?? response.data?.hasRated ?? false;
     } catch {
       return false;
     }
