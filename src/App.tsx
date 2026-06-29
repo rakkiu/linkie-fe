@@ -12,9 +12,20 @@ import AdminFanInsightsPage from './pages/admin/AdminFanInsightsPage';
 import AdminReportPage from './pages/admin/AdminReportPage';
 import AdminCreateEventPage from './pages/admin/AdminCreateEventPage';
 import AdminEventsListPage from './pages/admin/AdminEventsListPage';
+import AdminOrganizersPage from './pages/admin/AdminOrganizersPage';
+import AdminPricingRequestsPage from './pages/admin/AdminPricingRequestsPage';
+import TicketListPage from './pages/admin/TicketListPage';
+import TicketImportPage from './pages/admin/TicketImportPage';
 import WishwallModerationPage from './pages/WishwallModerationPage';
 import LedScreenPage from './pages/LedScreenPage';
 import EventsPage from './pages/EventsPage';
+import PhotoboothPage from './pages/photobooth/PhotoboothPage';
+import B2BHomePage from './pages/b2b/B2BHomePage';
+import B2BAnalyticsDashboardPage from './pages/b2b/B2BAnalyticsDashboardPage';
+import B2BFanInsightsPage from './pages/b2b/B2BFanInsightsPage';
+import B2BARFramesPage from './pages/b2b/B2BARFramesPage';
+import B2BWishwallPage from './pages/b2b/B2BWishwallPage';
+import B2BPhotoboothPage from './pages/b2b/B2BPhotoboothPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -48,6 +59,14 @@ function LedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function OrganizerRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user || user.role !== 'organizer') {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
 
 function AttendeeRoute({ children, allowGuest = false }: { children: React.ReactNode, allowGuest?: boolean }) {
   const { user } = useAuth();
@@ -58,6 +77,7 @@ function AttendeeRoute({ children, allowGuest = false }: { children: React.React
     if (user.role === 'admin') return <Navigate to="/admin/events" replace />;
     if (user.role === 'staff') return <Navigate to="/staff/wishwall" replace />;
     if (user.role === 'led') return <Navigate to="/led" replace />;
+    if (user.role === 'organizer') return <Navigate to="/b2b/dashboard" replace />;
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
@@ -72,6 +92,9 @@ function App() {
           <Route path="/events/:id" element={<AttendeeRoute allowGuest><EventDetailPage /></AttendeeRoute>} />
           <Route path="/events/:id/camera-frame" element={
             <AttendeeRoute><CameraFramePage /></AttendeeRoute>
+          } />
+          <Route path="/events/:id/photobooth" element={
+            <AttendeeRoute><PhotoboothPage /></AttendeeRoute>
           } />
           <Route path="/events/:id/wishwall" element={
             <AttendeeRoute><WishwallPage /></AttendeeRoute>
@@ -125,6 +148,54 @@ function App() {
             <AdminRoute>
               <AdminEventsListPage />
             </AdminRoute>
+          } />
+          <Route path="/admin/tickets" element={
+            <AdminRoute>
+              <TicketListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/tickets/import" element={
+            <AdminRoute>
+              <TicketImportPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/organizers" element={
+            <AdminRoute>
+              <AdminOrganizersPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/pricing-requests" element={
+            <AdminRoute>
+              <AdminPricingRequestsPage />
+            </AdminRoute>
+          } />
+
+          {/* B2B Routes */}
+          <Route path="/b2b" element={<B2BHomePage />} />
+          <Route path="/b2b/dashboard" element={
+            <OrganizerRoute>
+              <B2BAnalyticsDashboardPage />
+            </OrganizerRoute>
+          } />
+          <Route path="/b2b/fan-insights" element={
+            <OrganizerRoute>
+              <B2BFanInsightsPage />
+            </OrganizerRoute>
+          } />
+          <Route path="/b2b/ar-frames" element={
+            <OrganizerRoute>
+              <B2BARFramesPage />
+            </OrganizerRoute>
+          } />
+          <Route path="/b2b/wishwall" element={
+            <OrganizerRoute>
+              <B2BWishwallPage />
+            </OrganizerRoute>
+          } />
+          <Route path="/b2b/photobooth" element={
+            <OrganizerRoute>
+              <B2BPhotoboothPage />
+            </OrganizerRoute>
           } />
         </Routes>
       </BrowserRouter>

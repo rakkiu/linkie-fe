@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Constants
-const API_ORIGIN = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5002';
+export const API_ORIGIN = import.meta.env.VITE_API_URL?.trim() || 'https://linkie-be.onrender.com';
 export const BASE_URL = `${API_ORIGIN.replace(/\/+$/, '')}/api`;
 export const ACCESS_TOKEN_KEY = 'access_token';
 export const REFRESH_TOKEN_KEY = 'refresh_token';

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logoStar from '../image/logo-linkie-black.png';
 import logoText from '../image/Linkie.png';
+import axios from 'axios';
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24">
@@ -16,7 +16,7 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
-  const navigate = useNavigate(); // Added missing navigate hook
+  const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname; 
 
@@ -27,7 +27,10 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) { setError('Vui lòng nhập đầy đủ thông tin.'); return; }
+    if (!email || !password) {
+      setError('Vui lòng nhập đầy đủ thông tin.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -38,6 +41,8 @@ export default function LoginPage() {
         navigate(from, { replace: true });
       } else if (role === 'admin') {
         navigate('/admin/events');
+      } else if (role === 'organizer') {
+        navigate('/b2b/dashboard');
       } else if (role === 'staff') {
         navigate('/staff/wishwall'); 
       } else if (role === 'led') {
@@ -71,7 +76,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
       {/* Gradient header background */}
       <div
-        className="flex-shrink-0 h-[42vh]"
+        className="flex-shrink-0 h-[30vh]"
         style={{
           background: 'linear-gradient(180deg, #00bcd4 0%, #6c3baa 60%, #1a1030 100%)',
         }}
@@ -79,21 +84,21 @@ export default function LoginPage() {
 
       {/* Dark card slides up over gradient */}
       <div className="flex-1 bg-[#0f1221] rounded-t-[2rem] -mt-8 px-6 pt-8 pb-6 flex flex-col">
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-6">
           <img 
             src={logoStar} 
             alt="Linkie Icon" 
-            className="h-16 w-auto mb-4 object-contain" 
+            className="h-14 w-auto mb-3 object-contain" 
           />
-          <img src={logoText} alt="Linkie" className="h-10 w-auto" />
-          <p className="text-gray-400 text-sm mt-2">Hệ thống quản trị sự kiện</p>
+          <img src={logoText} alt="Linkie" className="h-8 w-auto" />
+          <p className="text-gray-400 text-xs mt-1">Hệ thống quản trị sự kiện</p>
         </div>
 
         {/* Google button */}
         <button
           onClick={handleGoogle}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 border border-red-500 rounded-xl py-3 text-white text-sm font-medium mb-4 hover:bg-white/5 active:scale-[0.98] transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-3 border border-red-500/50 rounded-xl py-3 text-white text-sm font-medium mb-4 hover:bg-white/5 active:scale-[0.98] transition-all disabled:opacity-50"
         >
           <GoogleIcon />
           Tiếp tục với Google
@@ -101,9 +106,9 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-white/15" />
+          <div className="flex-1 h-px bg-white/10" />
           <span className="text-gray-500 text-xs">hoặc</span>
-          <div className="flex-1 h-px bg-white/15" />
+          <div className="flex-1 h-px bg-white/10" />
         </div>
 
         {/* Form */}
@@ -113,31 +118,31 @@ export default function LoginPage() {
             placeholder="Nhập email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
+            className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
           />
           <input
             type="password"
             placeholder="Mật khẩu"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
+            className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
           />
 
-          {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+          {error && <p className="text-red-400 text-xs text-center mt-1">{error}</p>}
 
           {/* Action buttons */}
           <div className="flex gap-3 mt-2">
             <button
               type="button"
-              onClick={() => navigate(-1)}
-              className="flex-1 border border-[#00bcd4] text-white font-bold tracking-widest text-sm py-3 rounded-full hover:bg-[#00bcd4]/10 active:scale-[0.98] transition-all"
+              onClick={() => navigate('/')}
+              className="flex-1 border border-[#00bcd4] text-white font-bold tracking-widest text-xs py-3 rounded-full hover:bg-[#00bcd4]/10 active:scale-[0.98] transition-all"
             >
               QUAY LẠI
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 font-bold tracking-widest text-sm py-3 rounded-full text-white active:scale-[0.98] transition-all disabled:opacity-50"
+              className="flex-1 font-bold tracking-widest text-xs py-3 rounded-full text-white active:scale-[0.98] transition-all disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #e91e8c, #9c27b0)' }}
             >
               {loading ? '...' : 'ĐĂNG NHẬP'}
@@ -145,16 +150,19 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* Register link */}
-        <p className="text-gray-500 text-xs text-center mt-5">
-          Bạn chưa có tài khoản?{' '}
-          <Link to="/register" className="text-[#00bcd4] hover:underline">
+        <p className="text-center text-gray-400 text-sm mt-6">
+          Chưa có tài khoản?{' '}
+          <button 
+            type="button" 
+            onClick={() => navigate('/register')} 
+            className="text-[#00bcd4] font-semibold hover:underline"
+          >
             Đăng ký ngay
-          </Link>
+          </button>
         </p>
 
         {/* Disclaimer */}
-        <p className="text-center text-gray-500 text-[11px] mt-8 leading-relaxed">
+        <p className="text-center text-gray-500 text-[10px] mt-6 leading-relaxed">
           Bằng việc đăng nhập, bạn đồng ý với Điều khoản dịch vụ<br />
           và Chính sách bảo mật của Linkie.
         </p>

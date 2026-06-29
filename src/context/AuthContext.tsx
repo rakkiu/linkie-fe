@@ -8,7 +8,9 @@ interface AuthUser {
   name: string;
   email: string;
   role: UserRole;
-  id: string; // Added user ID
+  id: string;
+  managedEventId?: string; // Chỉ có với tài khoản Organizer
+  planTier?: string;        // Gói dịch vụ: 'students' | 'small' | 'medium' | 'large' (từ JWT claim 'plan_tier')
 }
 
 // Simple JWT decoder helper
@@ -35,6 +37,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -76,6 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const dotNetRole = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || payload["role"];
         const name = payload["FullName"] || payload["name"] || email.split('@')[0];
         const userId = payload["sub"] || payload["id"];
+        const managedEventId = payload["managed_event_id"] || undefined;
+        const planTier = payload["plan_tier"] || undefined; // Sẽ có khi backend thêm claim này
         
         // Map backend roll to frontend role enum
         let role: UserRole = 'user';
@@ -91,7 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name, 
           email: payload["email"] || email, 
           role,
-          id: userId
+          id: userId,
+          managedEventId,
+          planTier,
         };
         setUser(newUser);
         return newUser;
@@ -129,6 +136,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const dotNetRole = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || payload["role"];
           const name = payload["FullName"] || payload["name"] || result.user.displayName || 'Google User';
           const userId = payload["sub"] || payload["id"];
+          const managedEventId = payload["managed_event_id"] || undefined;
+          const planTier = payload["plan_tier"] || undefined;
           
           let role: UserRole = 'user';
           if (dotNetRole) {
@@ -143,7 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name, 
             email: result.user.email || '', 
             role,
-            id: userId
+            id: userId,
+            managedEventId,
+            planTier,
           };
           setUser(newUser);
           return newUser;
@@ -178,8 +189,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authService.changePassword(currentPassword, newPassword);
   };
 
+  const verifyEmail = async (token: string) => {
+    await authService.verifyEmail(token);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, forgotPassword, resetPassword, changePassword }}>
+    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, forgotPassword, resetPassword, changePassword, verifyEmail }}>
       {children}
     </AuthContext.Provider>
   );

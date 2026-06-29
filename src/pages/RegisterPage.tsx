@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logoStar from '../image/logo-linkie-black.png';
 import logoText from '../image/Linkie.png';
@@ -14,32 +14,10 @@ const GoogleIcon = () => (
 );
 
 export default function RegisterPage() {
-  const { register, loginWithGoogle } = useAuth();
+  const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !password || !confirm) { setError('Vui lòng nhập đầy đủ thông tin.'); return; }
-    if (password !== confirm) { setError('Mật khẩu xác nhận không khớp.'); return; }
-    if (password.length < 6) { setError('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
-    setError('');
-    setLoading(true);
-    try {
-      await register(name, email, password);
-      navigate('/');
-    } catch {
-      setError('Đăng ký thất bại. Vui lòng thử lại.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -83,64 +61,13 @@ export default function RegisterPage() {
           Tiếp tục với Google
         </button>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-white/15" />
-          <span className="text-gray-500 text-xs">hoặc</span>
-          <div className="flex-1 h-px bg-white/15" />
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleRegister} className="flex flex-col gap-3">
-          <input
-            type="text"
-            placeholder="Họ và tên"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
-          />
-          <input
-            type="password"
-            placeholder="Mật khẩu"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
-          />
-          <input
-            type="password"
-            placeholder="Xác nhận mật khẩu"
-            value={confirm}
-            onChange={e => setConfirm(e.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none focus:border-[#00bcd4] transition-colors"
-          />
-
-          {error && <p className="text-red-400 text-xs text-center">{error}</p>}
-
-          {/* Register button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full font-bold tracking-widest text-sm py-3 rounded-full text-white mt-2 active:scale-[0.98] transition-all disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #e91e8c, #9c27b0)' }}
-          >
-            {loading ? '...' : 'ĐĂNG KÝ'}
-          </button>
-        </form>
-
-        {/* Login link */}
-        <p className="text-gray-500 text-xs text-center mt-5">
-          Bạn đã có tài khoản?{' '}
-          <Link to="/login" className="text-[#00bcd4] hover:underline">
-            Đăng nhập
-          </Link>
-        </p>
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/')}
+          className="w-full border border-[#00bcd4] text-white font-bold tracking-widest text-sm py-3 rounded-full hover:bg-[#00bcd4]/10 active:scale-[0.98] transition-all mb-4"
+        >
+          QUAY LẠI
+        </button>
 
         {/* Disclaimer */}
         <p className="text-center text-gray-500 text-[11px] mt-8 leading-relaxed">

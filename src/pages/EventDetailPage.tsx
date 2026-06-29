@@ -2,6 +2,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useEffect, useState } from 'react';
 import { eventService, type PublicEvent } from '../services/eventService';
+import { useTicketVerification } from '../hooks/useTicketVerification';
 import logoLinkie from '../image/Linkie.png';
 
 const CameraIcon = () => (
@@ -17,9 +18,19 @@ const WishwallIcon = () => (
   </svg>
 );
 
+const PhotoboothIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d946ef" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="12" y1="3" x2="12" y2="21" />
+  </svg>
+);
+
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { ticketStatus, loading: ticketLoading } = useTicketVerification(id)
+
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -76,6 +87,25 @@ export default function EventDetailPage() {
         </div>
       </div>
 
+      {/* ── Ticket status badge ────────────────────── */}
+      {!ticketLoading && ticketStatus && (
+        <div className="px-6 pb-2">
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold ${
+            ticketStatus.hasValidTicket
+              ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+              : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              ticketStatus.hasValidTicket ? 'bg-green-400 shadow-[0_0_6px_#4ade80]' : 'bg-yellow-400 shadow-[0_0_6px_#facc15]'
+            }`} />
+            {ticketStatus.hasValidTicket
+              ? `✓ BẠN CÓ VÉ — ${ticketStatus.ticketCode || ''}`
+              : 'BẠN CHƯA CÓ VÉ CHO SỰ KIỆN NÀY'
+            }
+          </div>
+        </div>
+      )}
+
       {/* ── Feature cards ──────────────────────────── */}
       <div className="flex flex-col gap-6 px-6 pt-2 flex-1 mb-32">
         {/* Camera Frame */}
@@ -94,6 +124,26 @@ export default function EventDetailPage() {
             <p className="text-white font-black text-xl tracking-wide uppercase">Camera AR</p>
             <p className="text-white/90 text-[13px] mt-1 font-medium leading-tight">
               Lưu giữ khoảnh khắc cùng AR Frame độc quyền
+            </p>
+          </div>
+        </Link>
+
+        {/* Photobooth */}
+        <Link
+          to={`/events/${id}/photobooth`}
+          className="flex flex-col items-center justify-center rounded-[40px] h-64 gap-4 px-6
+            bg-gradient-to-br from-[#d946ef] to-[#8b5cf6]
+            hover:brightness-105 active:scale-[0.98] transition-all border border-white/10"
+        >
+          <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-4">
+            <div className="bg-white rounded-xl p-2.5">
+              <PhotoboothIcon />
+            </div>
+          </div>
+          <div className="text-center">
+            <p className="text-white font-black text-xl tracking-wide uppercase">Photobooth</p>
+            <p className="text-white/90 text-[13px] mt-1 font-medium leading-tight">
+              Tạo ảnh ghép phong cách cùng nhiều sticker dễ thương
             </p>
           </div>
         </Link>
@@ -123,7 +173,7 @@ export default function EventDetailPage() {
       <footer className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a] border-t border-white/5 py-3 text-center z-40">
         <img src={logoLinkie} alt="Linkie" className="h-6 w-auto mx-auto" />
         <p className="text-gray-500 text-[10px] mt-0.5">
-          Xóa nhòa khoảng cách giữa sân khấu và khán giả.
+            
         </p>
       </footer>
     </div>

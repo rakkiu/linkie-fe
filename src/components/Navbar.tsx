@@ -4,12 +4,40 @@ import { useAuth } from '../context/AuthContext';
 import logoIcon from '../image/logo-linkie-black.png';
 import logoText from '../image/Linkie.png';
 
+// Helper: navigate to / rồi scroll đến section theo id
+function useScrollToSection() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  return (sectionId: string) => {
+    const scrollTo = () => {
+      if (sectionId === '__top') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      const el = document.getElementById(sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+
+    if (location.pathname === '/') {
+      scrollTo();
+    } else {
+      navigate('/');
+      // Đợi route render xong rồi mới scroll
+      setTimeout(scrollTo, 150);
+    }
+  };
+}
+
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const scrollToSection = useScrollToSection();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -32,39 +60,50 @@ export default function Navbar() {
 
   return (
     <nav className="flex items-center justify-between px-4 py-2 bg-[#0a0a1a]/90 backdrop-blur-md fixed top-0 left-0 right-0 z-50 border-b border-white/5 h-16">
-      <Link to="/" className="flex flex-col items-center justify-center leading-none h-full">
+      <button
+        onClick={() => scrollToSection('__top')}
+        className="flex flex-col items-center justify-center leading-none h-full"
+      >
         <img
           src={logoIcon}
           alt="Linkie icon"
           className="h-7 sm:h-8 w-auto object-contain"
         />
-        <img 
+        <img
           src={logoText}
           alt="Linkie text"
           className="h-2.5 sm:h-3 w-auto object-contain mt-1"
         />
-      </Link>
+      </button>
 
       <div className="flex items-center gap-5 text-sm font-medium text-gray-400 overflow-x-auto scrollbar-hide py-1 px-2 h-full">
-        <Link 
-          to="/" 
+        <button
+          onClick={() => scrollToSection('__top')}
           className={`transition-colors whitespace-nowrap h-full flex items-center border-b-2 ${
             isActive('/') ? 'text-white border-[#e91e8c]' : 'border-transparent hover:text-white'
           }`}
         >
           Trang chủ
-        </Link>
-        <Link 
-          to="/events" 
+        </button>
+        <Link
+          to="/events"
           className={`transition-colors whitespace-nowrap h-full flex items-center border-b-2 ${
             isActive('/events') ? 'text-white border-[#e91e8c]' : 'border-transparent hover:text-white'
           }`}
         >
           Sự kiện
         </Link>
+        <Link
+          to="/b2b"
+          className={`transition-colors whitespace-nowrap h-full flex items-center border-b-2 ${
+            isActive('/b2b') ? 'text-white border-[#e91e8c]' : 'border-transparent hover:text-white'
+          }`}
+        >
+          Hợp tác sự kiện
+        </Link>
         {user?.role === 'staff' && (
-          <Link 
-            to="/staff/wishwall" 
+          <Link
+            to="/staff/wishwall"
             className={`transition-colors whitespace-nowrap h-full flex items-center border-b-2 ${
               isActive('/staff/wishwall') ? 'text-purple-400 border-[#e91e8c]' : 'text-purple-400/70 border-transparent hover:text-purple-300'
             }`}
@@ -73,8 +112,8 @@ export default function Navbar() {
           </Link>
         )}
         {user?.role === 'led' && (
-          <Link 
-            to="/led" 
+          <Link
+            to="/led"
             className={`transition-colors whitespace-nowrap h-full flex items-center border-b-2 ${
               isActive('/led') ? 'text-teal-400 border-[#e91e8c]' : 'text-teal-400/70 border-transparent hover:text-teal-300'
             }`}
@@ -82,12 +121,12 @@ export default function Navbar() {
             Màn hình LED
           </Link>
         )}
-        <a 
-          href="/#about" 
+        <button
+          onClick={() => scrollToSection('about')}
           className="hover:text-white transition-colors whitespace-nowrap h-full flex items-center border-b-2 border-transparent text-gray-400"
         >
           Về chúng tôi
-        </a>
+        </button>
       </div>
 
       {user ? (

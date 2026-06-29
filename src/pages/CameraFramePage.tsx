@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { eventService, type PublicEvent, type ArFrame } from '../services/eventService';
+import { useTicketVerification } from '../hooks/useTicketVerification';
+import RatingModal from '../components/RatingModal';
 
 const LKCaptureButton = () => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -25,6 +27,7 @@ const LKCaptureButton = () => (
 export default function CameraFramePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { ticketStatus, loading: ticketLoading } = useTicketVerification(id);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,6 +42,10 @@ export default function CameraFramePage() {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [showFramePicker, setShowFramePicker] = useState(false);
 
+  // Rating Modal state
+  const [hasRated, setHasRated] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+
   // ── Fetch Event & Frames ───────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
@@ -51,7 +58,14 @@ export default function CameraFramePage() {
         ]);
         if (isMounted) {
           setEvent(evtData);
-          setFrames(framesData);
+          setFrames(framesData.filter(f => !f.name.startsWith('[PB]')));
+        }
+        
+        try {
+          const rated = await eventService.checkRatingStatus(id);
+          if (isMounted) setHasRated(rated);
+        } catch {
+          // ignore error
         }
       } catch {
         // fail silently
@@ -114,6 +128,19 @@ export default function CameraFramePage() {
     };
   }, [facingMode]);
 
+  // Đồng bộ camera stream vào thẻ video khi component đã render xong (loading = false)
+  useEffect(() => {
+    if (!loading && !ticketLoading && streamRef.current && videoRef.current) {
+      const videoEl = videoRef.current;
+      if (videoEl.srcObject !== streamRef.current) {
+        videoEl.srcObject = streamRef.current;
+        videoEl.play().catch(err => {
+          console.warn('Không thể tự động phát video stream:', err);
+        });
+      }
+    }
+  }, [loading, ticketLoading, facingMode]);
+
   const toggleCamera = () => {
     setFacingMode(prev => (prev === 'user' ? 'environment' : 'user'));
   };
@@ -164,18 +191,84 @@ export default function CameraFramePage() {
     img.src = frame.assetUrl;
   }, [frames, selectedFrameIdx, event, id, facingMode]);
 
-  if (loading) {
+  const handleDownloadClick = async () => {
+    if (hasRated) {
+      handleCapture();
+      return;
+    }
+    try {
+      const rated = await eventService.checkRatingStatus(id!);
+      if (rated) {
+        setHasRated(true);
+        handleCapture();
+      } else {
+        setShowRatingModal(true);
+      }
+    } catch {
+      setShowRatingModal(true); // fallback to showing modal if API fails
+    }
+  };
+
+  const handleRatingSuccess = () => {
+    setShowRatingModal(false);
+    setHasRated(true);
+    handleCapture();
+  };
+
+  if (loading || ticketLoading) {
     return (
-      <div className="bg-[#0d1117] min-h-screen text-white flex flex-col items-center justify-center">
-        <div className="animate-spin text-4xl mb-4 text-[#00e5ff]">⟳</div>
-        <p className="text-gray-400">Đang khởi động Camera AR...</p>
+      <div className="bg-[#0d1117] min-h-screen text-white flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-[#00e5ff] border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  if (!ticketStatus?.hasValidTicket) {
+    return (
+      <div className="bg-[#0d1117] min-h-screen text-white flex flex-col items-center justify-center px-6">
+        <Navbar />
+        <div className="text-center mt-20">
+          <div className="text-6xl mb-6">🎫</div>
+          <h2 className="text-2xl font-black mb-2">Cần vé tham gia</h2>
+          <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed">
+            Bạn cần có vé hợp lệ để sử dụng tính năng này.
+          </p>
+          <button
+            onClick={() => navigate(`/events/${id}`)}
+            className="mt-6 px-6 py-3 bg-[#e91e8c] text-white font-bold rounded-full text-sm"
+          >
+            Quay lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (ticketStatus && !ticketStatus.hasValidTicket) {
+    return (
+      <div className="bg-[#0d1117] min-h-screen text-white flex flex-col items-center justify-center px-6 text-center">
+        <div className="text-6xl mb-6">📸</div>
+        <h2 className="text-2xl font-bold mb-3">Bạn chưa có vé cho sự kiện này</h2>
+        <p className="text-gray-400 text-sm max-w-sm">
+          Vui lòng mua vé để sử dụng tính năng Camera AR.
+        </p>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-8 px-6 py-3 rounded-full bg-white/10 border border-white/20 text-white font-semibold text-sm hover:bg-white/20 transition-all"
+        >
+          Quay lại
+        </button>
+      </div>
+    )
   }
 
   return (
     <div className="bg-[#0d1117] min-h-screen text-white flex flex-col overflow-hidden">
       <Navbar />
+
+      {showRatingModal && event?.id && (
+        <RatingModal eventId={event.id} onSuccess={handleRatingSuccess} />
+      )}
 
       {/* ── Header ──────────────────────────────────── */}
       <div className="pt-16 px-5 pb-1 shrink-0">
@@ -275,7 +368,7 @@ export default function CameraFramePage() {
 
         {/* Center: Capture */}
         <button
-          onClick={handleCapture}
+          onClick={handleDownloadClick}
           disabled={!!cameraError || frames.length === 0}
           className="active:scale-95 transition-transform disabled:opacity-30 disabled:grayscale relative"
         >

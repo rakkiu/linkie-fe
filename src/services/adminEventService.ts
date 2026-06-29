@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { apiClient, API_ORIGIN } from './apiClient';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,6 +15,7 @@ export interface ApiEvent {
   isWishwallEnabled: boolean;
   thumbnailUrl: string | null;
   status: EventStatus | number;
+  requiresTicket?: boolean;
 }
 
 export interface EventFormData {
@@ -26,6 +27,7 @@ export interface EventFormData {
   maxParticipants: number | string;
   isWishwallEnabled: boolean;
   status?: EventStatus;
+  requiresTicket: boolean;
 }
 
 export interface ArFrame {
@@ -77,7 +79,7 @@ export const ensureImageUrl = (url: string | null): string => {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('blob:')) return url;
   // If it's a relative path (e.g. /uploads/...), prepend server URL
-  const baseUrl = 'http://localhost:5002';
+  const baseUrl = API_ORIGIN;
   return url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
 };
 
@@ -182,5 +184,10 @@ export const adminEventService = {
   /** DELETE — Xóa vĩnh viễn Frame */
   deleteFrame: async (frameId: string): Promise<void> => {
     await apiClient.delete(`/admin/frames/${frameId}`);
+  },
+
+  /** PATCH — Bật/tắt xác thực vé cho sự kiện */
+  toggleTicketVerification: async (eventId: string, requiresTicket: boolean): Promise<void> => {
+    await apiClient.patch(`/admin/events/${eventId}/ticket-verification`, { requiresTicket });
   },
 };

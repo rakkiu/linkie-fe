@@ -1,4 +1,4 @@
-import { apiClient, BASE_URL, ACCESS_TOKEN_KEY } from './apiClient';
+import { apiClient, BASE_URL, ACCESS_TOKEN_KEY, API_ORIGIN } from './apiClient';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,7 @@ export interface PublicEvent {
   isWishwallEnabled: boolean;
   thumbnailUrl: string | null;
   status: 'Draft' | 'Active' | 'Completed' | 'Cancelled';
+  requiresTicket?: boolean;
 }
 
 export interface ArFrame {
@@ -28,7 +29,7 @@ export interface ArFrame {
 export const ensureImageUrl = (url: string | null): string => {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('blob:')) return url;
-  const baseUrl = 'http://localhost:5002';
+  const baseUrl = API_ORIGIN;
   return url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
 };
 
@@ -103,6 +104,37 @@ export const eventService = {
       });
     } catch (error) {
       console.error('Failed to record frame usage (silent):', error);
+    }
+  },
+
+  /** POST — Ghi nhận hành động chung (Share, Timelapse) */
+  recordEventAction: async (eventId: string, actionType: string): Promise<void> => {
+    try {
+      await fetch(`${BASE_URL}/events/${eventId}/analytics/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ actionType })
+      });
+    } catch (error) {
+      console.warn('Failed to record event action:', error);
+    }
+  },
+
+  /** POST — Gửi đánh giá cho sự kiện */
+  submitRating: async (eventId: string, score: number, feedback?: string): Promise<void> => {
+    const response = await apiClient.post(`/events/${eventId}/rating`, { starRating: score, feedback });
+    return response.data;
+  },
+
+  /** GET — Kiểm tra xem thiết bị/user đã đánh giá chưa */
+  checkRatingStatus: async (eventId: string): Promise<boolean> => {
+    try {
+      const response = await apiClient.get(`/events/${eventId}/rating/status`);
+      return response.data?.data ?? response.data?.hasRated ?? false;
+    } catch {
+      return false;
     }
   },
 };
