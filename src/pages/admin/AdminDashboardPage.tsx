@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
             {/* Camera Frame Summary - Figma Style */}
             <div style={{...cardStyle, gap: '12px'}}>
               <div style={{ color: '#ccc', fontSize: '15px', fontWeight: 700, letterSpacing: '1px' }}>CAMERA AR</div>
@@ -234,6 +234,44 @@ export default function AdminDashboardPage() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Deep Analytics */}
+            <div style={cardStyle}>
+              <div style={{ color: '#ccc', fontSize: '13px', fontWeight: 700, marginBottom: '16px', letterSpacing: '1px' }}>TƯƠNG TÁC CHUYÊN SÂU</div>
+              
+              <div style={{
+                background: 'rgba(24, 119, 242, 0.1)',
+                border: '1px solid rgba(24, 119, 242, 0.2)',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                   <div style={{ color: '#888', fontSize: '11px', marginBottom: '2px' }}>Lượt Chia sẻ</div>
+                   <div style={{ color: '#1877F2', fontSize: '32px', fontWeight: 800 }}>{summary?.totalShares.toLocaleString() || 0}</div>
+                </div>
+                <div style={{ fontSize: '24px' }}>🚀</div>
+              </div>
+
+              <div style={{
+                background: 'rgba(236, 72, 153, 0.1)',
+                border: '1px solid rgba(236, 72, 153, 0.2)',
+                borderRadius: '8px',
+                padding: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                   <div style={{ color: '#888', fontSize: '11px', marginBottom: '2px' }}>Lượt tải Time-lapse</div>
+                   <div style={{ color: '#ec4899', fontSize: '32px', fontWeight: 800 }}>{summary?.totalTimelapses.toLocaleString() || 0}</div>
+                </div>
+                <div style={{ fontSize: '24px' }}>🎞️</div>
               </div>
             </div>
 

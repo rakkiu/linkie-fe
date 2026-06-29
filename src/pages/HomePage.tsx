@@ -369,6 +369,20 @@ export default function HomePage() {
                 ))}
               </ul>
             </div>
+
+            <div>
+              <p className="text-sm font-bold text-[#00e5ff] mb-2">Doanh nghiệp</p>
+              <ul className="flex flex-col gap-1.5">
+                <li>
+                  <Link
+                    to="/b2b"
+                    className="text-[12px] text-gray-400 hover:text-[#00e5ff] transition-colors font-medium"
+                  >
+                    Hợp tác sự kiện (Pricing)
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
