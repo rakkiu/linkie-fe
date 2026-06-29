@@ -434,6 +434,7 @@ export default function LedScreenPage() {
             </div>
           )}
         </div>
+        </>
       ) : (
         <main className="relative z-10 px-[24px] max-w-[1440px] mx-auto pt-[12px] flex-1 overflow-visible h-screen w-full flex flex-col">
           {/* TopNavBar */}
