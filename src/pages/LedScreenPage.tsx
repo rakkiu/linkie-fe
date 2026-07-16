@@ -386,9 +386,18 @@ export default function LedScreenPage() {
 
       {/* Main Content */}
       {!eventId ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 mt-16 max-w-2xl mx-auto w-full z-10">
-          <h1 className="text-3xl font-bold text-white mb-2 text-center uppercase tracking-wider font-['Outfit']">Wishwall Live Display</h1>
-          <p className="text-[#bbc9cf] mb-10 text-center text-sm">Chọn sự kiện đang diễn ra để hiển thị các lời chúc.</p>
+        <>
+          <button 
+            onClick={() => { logout(); navigate('/login'); }}
+            className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-white/70 hover:text-white transition-all group"
+          >
+            <span className="material-symbols-outlined text-[18px] group-hover:text-[#ec4899] transition-colors">logout</span>
+            <span className="text-xs font-bold uppercase tracking-widest">Đăng xuất</span>
+          </button>
+
+          <div className="flex-1 flex flex-col items-center justify-center p-6 mt-16 max-w-2xl mx-auto w-full z-10">
+            <h1 className="text-3xl font-bold text-white mb-2 text-center uppercase tracking-wider font-['Outfit']">Wishwall Live Display</h1>
+            <p className="text-[#bbc9cf] mb-10 text-center text-sm">Chọn sự kiện đang diễn ra để hiển thị các lời chúc.</p>
 
           {ongoingEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 bg-white/5 border border-white/10 rounded-3xl w-full">
@@ -425,6 +434,7 @@ export default function LedScreenPage() {
             </div>
           )}
         </div>
+        </>
       ) : (
         <main className="relative z-10 px-[24px] max-w-[1440px] mx-auto pt-[12px] flex-1 overflow-visible h-screen w-full flex flex-col">
           {/* TopNavBar */}

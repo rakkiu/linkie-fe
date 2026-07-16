@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { BASE_URL, ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from './apiClient';
+import { BASE_URL, ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, apiClient } from './apiClient';
 
 export interface LoginResponse {
   accessToken: string;
@@ -76,7 +76,7 @@ export const authService = {
   },
 
   changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
-    await axios.post(`${BASE_URL}/Auth/changePassword`, { currentPassword, newPassword });
+    await apiClient.post(`/Auth/changePassword`, { currentPassword, newPassword });
   },
 
   verifyEmail: async (token: string): Promise<void> => {

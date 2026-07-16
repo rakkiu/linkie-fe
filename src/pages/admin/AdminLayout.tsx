@@ -6,7 +6,7 @@ import logoLinkieWhite from '../../image/logo-linkie-white.png';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  activePage: 'dashboard' | 'events' | 'fan-insights' | 'report' | 'create-event' | 'wishwall' | 'led' | 'tickets' | 'organizers' | 'pricing-requests';
+  activePage: 'dashboard' | 'events' | 'fan-insights' | 'report' | 'create-event' | 'wishwall' | 'led' | 'tickets' | 'organizers' | 'pricing-requests' | 'audit-log';
 }
 
 export default function AdminLayout({ children, activePage }: AdminLayoutProps) {
@@ -22,6 +22,7 @@ export default function AdminLayout({ children, activePage }: AdminLayoutProps) 
     { id: 'events', label: 'SỰ KIỆN', path: user?.role === 'admin' ? '/admin/events' : '/staff/events', roles: ['admin', 'staff'] },
     { id: 'create-event', label: 'TẠO SỰ KIỆN', path: '/admin/create-event', roles: ['admin'] },
     { id: 'dashboard', label: 'BẢNG ĐIỀU KHIỂN', path: '/admin', roles: ['admin'] },
+    { id: 'audit-log', label: 'AUDIT LOG', path: '/admin/audit-log', roles: ['admin'] },
     { id: 'fan-insights', label: 'TÌM HIỂU FAN', path: '/admin/fan-insights', roles: ['admin'] },
     { id: 'report', label: 'BÁO CÁO', path: '/admin/report', roles: ['admin'] },
     { id: 'tickets', label: 'QUẢN LÝ VÉ', path: '/admin/tickets', roles: ['admin'] },

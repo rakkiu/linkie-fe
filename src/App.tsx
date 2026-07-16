@@ -14,6 +14,7 @@ import AdminCreateEventPage from './pages/admin/AdminCreateEventPage';
 import AdminEventsListPage from './pages/admin/AdminEventsListPage';
 import AdminOrganizersPage from './pages/admin/AdminOrganizersPage';
 import AdminPricingRequestsPage from './pages/admin/AdminPricingRequestsPage';
+import AdminAuditLogPage from './pages/admin/AdminAuditLogPage';
 import TicketListPage from './pages/admin/TicketListPage';
 import TicketImportPage from './pages/admin/TicketImportPage';
 import WishwallModerationPage from './pages/WishwallModerationPage';
@@ -167,6 +168,11 @@ function App() {
           <Route path="/admin/pricing-requests" element={
             <AdminRoute>
               <AdminPricingRequestsPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/audit-log" element={
+            <AdminRoute>
+              <AdminAuditLogPage />
             </AdminRoute>
           } />
 
