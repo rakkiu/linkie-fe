@@ -31,6 +31,12 @@ export interface WishwallReport {
   topKeywords: KeywordStat[];
 }
 
+export interface RatingReport {
+  averageRating: number;
+  totalReviews: number;
+  distribution: Record<number, number>;
+}
+
 export interface EventReport {
   eventId: string;
   eventName: string;
@@ -41,6 +47,7 @@ export interface EventReport {
   averageSessionSeconds: number;
   frameUsage: FrameUsageReport;
   wishwall: WishwallReport;
+  rating?: RatingReport;
   heatMap: HeatMapPoint[];
 }
 

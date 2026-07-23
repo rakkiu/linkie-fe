@@ -86,6 +86,29 @@ const formatDuration = (seconds: number) => {
   return `${m}m ${s.toString().padStart(2, '0')}s`;
 };
 
+function RatingBarChart({ distribution, totalReviews }: { distribution?: Record<number, number>; totalReviews?: number }) {
+  const dist = distribution ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const total = totalReviews || Object.values(dist).reduce((a, b) => a + b, 0) || 1;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+      {[5, 4, 3, 2, 1].map(star => {
+        const count = dist[star] ?? 0;
+        const percent = total > 0 ? (count / total) * 100 : 0;
+        return (
+          <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: '#facc15', fontSize: '12px', width: '24px', fontWeight: 700 }}>{star}★</span>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.08)', borderRadius: '4px', height: '10px', overflow: 'hidden' }}>
+              <div style={{ width: `${percent}%`, height: '100%', background: star >= 4 ? '#00bcd4' : star === 3 ? '#ff9800' : '#e91e8c', borderRadius: '4px', transition: 'width 0.5s' }} />
+            </div>
+            <span style={{ color: '#aaa', fontSize: '11px', width: '52px', textAlign: 'right' }}>{count} ({Math.round(percent)}%)</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function AdminReportPage() {
   const [events, setEvents] = useState<ApiEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
@@ -215,7 +238,12 @@ export default function AdminReportPage() {
       {loading && <div style={{ color: '#9fa9bf', marginBottom: '16px' }}>Đang tải dữ liệu report...</div>}
       {error && <div style={{ color: '#ff6b6b', marginBottom: '16px' }}>{error}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '20px' }}>
+        <KpiCard
+          title="Đánh giá trung bình"
+          value={report?.rating?.averageRating ? `${report.rating.averageRating.toFixed(1)} ★` : '--'}
+          subtext={`${report?.rating?.totalReviews ?? 0} lượt đánh giá`}
+        />
         <KpiCard title="Tổng lưu lượng" value={formatNumber(report?.totalTraffic ?? 0)} subtext="Người tham gia" />
         <KpiCard title="Tổng tương tác" value={formatNumber(report?.totalEngagement ?? 0)} subtext="Ảnh & Lời chúc" />
         <KpiCard title="Tỷ lệ chuyển đổi" value={formatPercent(report?.conversionRate ?? 0)} subtext="Lưu lượng sang Tương tác" />
@@ -248,7 +276,10 @@ export default function AdminReportPage() {
         </div>
 
         <div style={{ ...cardStyle, gap: '24px' }}>
-          <div style={{ color: 'white', fontSize: '16px', fontWeight: 700, letterSpacing: '1px' }}>Phân tích Wishwall</div>
+          <div style={{ color: 'white', fontSize: '16px', fontWeight: 700, letterSpacing: '1px' }}>Phân tích Đánh giá (Rating)</div>
+          <RatingBarChart distribution={report?.rating?.distribution} totalReviews={report?.rating?.totalReviews} />
+
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px', color: 'white', fontSize: '16px', fontWeight: 700, letterSpacing: '1px' }}>Phân tích Wishwall</div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', margin: '20px 0' }}>
             <svg width="180" height="180" viewBox="0 0 180 180">
