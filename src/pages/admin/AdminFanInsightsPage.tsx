@@ -94,6 +94,7 @@ export default function AdminFanInsightsPage() {
     if (!eventId) return;
     try {
       setLoading(true);
+      setError('');
       const [insightsData, statsData] = await Promise.all([
         adminFanInsightsService.getFanInsights(eventId),
         adminFanInsightsService.getEventFrameStats(eventId)

@@ -1,68 +1,35 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { createWishwallConnection } from '../services/wishwallService';
+import { createWishwallConnection, wishwallApi } from '../services/wishwallService';
 import { eventService, type PublicEvent, getEventStatus } from '../services/eventService';
 import { useAuth } from '../context/AuthContext';
 import type { LedDisplayMessage } from '../types/wishwall';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const CARD_W = 300;
-const CARD_H = 140;       // estimated card height for bounce boundary
-const HEADER_H = 64;      // header bar height in px
-const LIFETIME_MS = 12000; // time before fade starts
-const FADE_MS = 3000;      // fade-out duration
-const TOTAL_MS = LIFETIME_MS + FADE_MS;
-const BASE_SPEED = 1.5;   // pixels per frame
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface PhysicsItem extends LedDisplayMessage {
-  key: string;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  born: number;
+interface DisplayMessageWithTime extends LedDisplayMessage {
+  addedAt: number;
+  colIndex: number;
 }
-
-const SENTIMENT_GLOW: Record<string, string> = {
-  Positive: 'shadow-[0_0_30px_rgba(250,204,21,0.5)]',
-  Neutral: 'shadow-[0_0_30px_rgba(250,204,21,0.3)]',
-  Negative: 'shadow-rose-500/40',
-};
-
-const SENTIMENT_BORDER: Record<string, string> = {
-  Positive: 'border-[#b91c1c]/40',
-  Neutral: 'border-[#facc15]/30',
-  Negative: 'border-rose-500/50',
-};
-
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function LedScreenPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  // ── Event switcher state ───────────────────────────────────────────────────
+  // ── Event picker switcher state ─────────────────────────────────────────────
   const [showEventPicker, setShowEventPicker] = useState(false);
   const [ongoingEvents, setOngoingEvents] = useState<PublicEvent[]>([]);
-  const [currentEventName, setCurrentEventName] = useState<string>('');
+  const [messages, setMessages] = useState<DisplayMessageWithTime[]>([]);
+  const [activeFlashId, setActiveFlashId] = useState<string | null>(null);
+  const [currentEvent, setCurrentEvent] = useState<PublicEvent | null>(null);
+  const [ledDuration, setLedDuration] = useState<number>(30); // Default 30s
+  const [isShattering, setIsShattering] = useState<boolean>(false);
+  const [isCleared, setIsCleared] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (!eventId) return;
-    eventService.getEventById(eventId)
-      .then(data => setCurrentEventName(data.name || ''))
-      .catch(() => {});
-  }, [eventId]);
+  const connRef = useRef<ReturnType<typeof createWishwallConnection> | null>(null);
 
+  // ── Fetch live events for picker switcher ──────────────────────────────────
   useEffect(() => {
-    // Luôn fetch nếu không có eventId (trang picker chính) 
-    // HOẶC nếu đang mở modal switcher
     if (!showEventPicker && eventId) return;
-    
     eventService.getAllEvents('Active')
       .then(data => {
         const liveEvents = data.filter(ev => getEventStatus(ev) === 'live');
@@ -71,82 +38,73 @@ export default function LedScreenPage() {
       .catch(() => {});
   }, [showEventPicker, eventId]);
 
-  // React state only drives mount/unmount; physics runs via direct DOM updates
-  const [items, setItems] = useState<PhysicsItem[]>([]);
-  const physicsRef = useRef<PhysicsItem[]>([]);
-  const cardElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
-  const connRef = useRef<ReturnType<typeof createWishwallConnection> | null>(null);
-  const rafRef = useRef<number>(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const addItem = useCallback((msg: LedDisplayMessage) => {
-    const W = containerRef.current?.clientWidth ?? window.innerWidth;
-    const H = containerRef.current?.clientHeight ?? window.innerHeight;
-    const x = Math.random() * Math.max(0, W - CARD_W);
-    const y = HEADER_H + Math.random() * Math.max(0, H - HEADER_H - CARD_H);
-    const angle = Math.random() * 2 * Math.PI;
-    const speed = BASE_SPEED * (0.8 + Math.random() * 0.5);
-
-    const item: PhysicsItem = {
-      ...msg,
-      key: `${msg.id}-${Date.now()}`,
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      born: Date.now(),
-    };
-    physicsRef.current = [...physicsRef.current, item];
-    setItems(prev => [...prev, item]);
-  }, []);
-
-  // ── Animation loop: direct DOM mutation for 60fps, setState only on removal ──
   useEffect(() => {
-    const animate = () => {
-      const now = Date.now();
-      const W = containerRef.current?.clientWidth ?? window.innerWidth;
-      const H = containerRef.current?.clientHeight ?? window.innerHeight;
-      const dead: string[] = [];
+    if (eventId) {
+      eventService.getEventById(eventId)
+        .then(ev => setCurrentEvent(ev))
+        .catch(() => {});
+    }
+  }, [eventId]);
 
-      physicsRef.current = physicsRef.current.map(p => {
-        const age = now - p.born;
-        if (age >= TOTAL_MS) { dead.push(p.key); return p; }
+  // ── Fetch latest messages ────────────────────────────────────────────────────
+  const fetchLatestMessages = useCallback(async () => {
+    if (!eventId) return;
+    try {
+      const res = await wishwallApi.getMessages(eventId);
+      const data = res.data?.data || [];
+      if (data.length === 0) return;
 
-        let { x, y, vx, vy } = p;
-        x += vx; y += vy;
-
-        // Bounce off walls
-        if (x <= 0)           { x = 0;           vx = Math.abs(vx); }
-        else if (x + CARD_W >= W) { x = W - CARD_W; vx = -Math.abs(vx); }
-        if (y <= HEADER_H)         { y = HEADER_H;   vy = Math.abs(vy); }
-        else if (y + CARD_H >= H)  { y = H - CARD_H; vy = -Math.abs(vy); }
-
-        const opacity = age < LIFETIME_MS
-          ? 1
-          : 1 - (age - LIFETIME_MS) / FADE_MS;
-
-        // Directly update DOM — no React re-render needed
-        const el = cardElsRef.current.get(p.key);
-        if (el) {
-          el.style.transform = `translate(${x}px, ${y}px)`;
-          el.style.opacity = `${opacity}`;
-        }
-
-        return { ...p, x, y, vx, vy };
-      });
-
-      if (dead.length > 0) {
-        physicsRef.current = physicsRef.current.filter(p => !dead.includes(p.key));
-        setItems(prev => prev.filter(p => !dead.includes(p.key)));
+      // Map with current time as addedAt and balanced random colIndex
+      const mapped = data.slice(0, 10).map((m: LedDisplayMessage, idx: number) => ({
+        ...m,
+        addedAt: Date.now(),
+        colIndex: idx % 3 // Distribute evenly initially
+      }));
+      // Shuffle the colIndex assignments so it doesn't look like a strict pattern
+      for (let i = mapped.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = mapped[i].colIndex;
+        mapped[i].colIndex = mapped[j].colIndex;
+        mapped[j].colIndex = temp;
       }
+      setMessages(mapped);
+    } catch (err) {
+      console.error('Failed to load initial wishwall messages:', err);
+    }
+  }, [eventId]);
 
-      rafRef.current = requestAnimationFrame(animate);
-    };
+  // ── Initial load of approved messages ──────────────────────────────────────
+  useEffect(() => {
+    fetchLatestMessages();
+  }, [fetchLatestMessages]);
 
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+  // ── Auto-refill when empty ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (messages.length === 0 && !isShattering && !isCleared && eventId) {
+      const timer = setTimeout(() => {
+        fetchLatestMessages();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [messages.length, isShattering, isCleared, eventId, fetchLatestMessages]);
 
-  // ── SignalR ────────────────────────────────────────────────────────────────
+  // ── Auto-cleanup of expired messages ───────────────────────────────────────
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setMessages(prev => {
+        const filtered = prev.filter(m => now - m.addedAt < ledDuration * 1000);
+        if (filtered.length !== prev.length) {
+          return filtered;
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [ledDuration]);
+
+  // ── SignalR Setup ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!eventId) return;
 
@@ -154,80 +112,241 @@ export default function LedScreenPage() {
     connRef.current = conn;
 
     conn.start().then(() => conn.invoke('JoinLed', eventId).catch(() => {}));
-    conn.on('LedDisplay', (payload: LedDisplayMessage) => addItem(payload));
+    
+    conn.on('LedDisplay', (payload: LedDisplayMessage) => {
+      setIsCleared(false); // Reset clear state when new message arrives
+      setMessages(prev => {
+        if (prev.some(m => m.id === payload.id)) {
+          return prev;
+        }
+        // Find the column(s) with the fewest items to keep it balanced but random
+        const colCounts = [0, 0, 0];
+        prev.forEach(m => colCounts[m.colIndex]++);
+        const minCount = Math.min(...colCounts);
+        const availableCols = [0, 1, 2].filter(c => colCounts[c] === minCount);
+        const randomCol = availableCols[Math.floor(Math.random() * availableCols.length)];
+
+        // Insert new message at the top and limit to 10
+        const newMessage: DisplayMessageWithTime = {
+          ...payload,
+          addedAt: Date.now(),
+          colIndex: randomCol
+        };
+        return [newMessage, ...prev].slice(0, 10);
+      });
+      
+      // Flash new message
+      setActiveFlashId(payload.id);
+      setTimeout(() => setActiveFlashId(null), 1000);
+    });
+
+    conn.on('LedClear', () => {
+      console.log('SignalR LedClear received - triggering shatter effect...');
+      setIsCleared(true); // Prevent auto-refill
+      setIsShattering(true);
+      setTimeout(() => {
+        setMessages([]);
+        setIsShattering(false);
+      }, 1200); // Shatter animation duration
+    });
+
+    conn.on('LedDurationChanged', (duration: number) => {
+      console.log('SignalR LedDurationChanged received:', duration);
+      setLedDuration(duration);
+    });
 
     return () => {
       conn.invoke('LeaveLed', eventId).catch(() => {});
       conn.stop();
       connRef.current = null;
     };
-  }, [eventId, addItem]);
+  }, [eventId]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Keyboard shortcuts ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowEventPicker(prev => !prev);
+      } else if (e.key === 'q' || e.key === 'Q') {
+        logout();
+        navigate('/login');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [logout, navigate]);
+
+  // ── Random glowing highlight interaction (fallback if no live messages) ────
+  useEffect(() => {
+    if (messages.length === 0) return;
+    
+    const interval = setInterval(() => {
+      if (activeFlashId) return; // Don't interrupt real flashes
+      const randomIdx = Math.floor(Math.random() * messages.length);
+      const targetMsg = messages[randomIdx];
+      if (targetMsg) {
+        setActiveFlashId(targetMsg.id);
+        setTimeout(() => {
+          setActiveFlashId(null);
+        }, 500);
+      }
+    }, 4000);
+    
+    return () => clearInterval(interval);
+  }, [messages, activeFlashId]);
+
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 bg-black overflow-hidden select-none"
-      style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}
-    >
+    <div className="bg-[#0d1117] text-[#e5e2e1] h-screen overflow-hidden flex flex-col selection:bg-[#00e5ff]/30 relative font-['Inter']">
       <style>{`
-        @keyframes sparkle {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+        body {
+          background-color: #0d1117;
+          color: #e5e2e1;
+          overflow: hidden;
         }
-        .animate-sparkle {
-          background: linear-gradient(90deg, rgba(255,215,0,0) 0%, rgba(255,215,0,0.3) 50%, rgba(255,215,0,0) 100%);
-          background-size: 200% 100%;
-          animation: sparkle 3s infinite linear;
+
+        .glass-card {
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, filter 0.3s ease;
+          display: inline-flex;
+          flex-direction: column;
+          justify-content: space-between;
+          width: 100%;
+          margin-bottom: 24px;
+          break-inside: avoid;
+          box-sizing: border-box;
+        }
+
+        .cyan-glow {
+          box-shadow: 0 0 20px -5px rgba(0, 229, 255, 0.2);
+          border-left: 4px solid #00e5ff;
+        }
+
+        .pink-glow {
+          box-shadow: 0 0 40px -10px rgba(236, 72, 153, 0.6);
+          border-top: 4px solid #ec4899;
+          background: rgba(236, 72, 153, 0.05);
+        }
+
+        .live-pulse {
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 229, 255, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); }
+        }
+
+        /* ── Slide Down entry for new messages ──────────────────────────────── */
+        .slide-down-entry {
+          animation: slideDown 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, float 6s ease-in-out infinite 0.8s;
+        }
+
+        .floating-anim {
+          animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
+          100% { transform: translateY(0px); }
+        }
+
+        @keyframes slideDown {
+          0% {
+            opacity: 0;
+            transform: translateY(-80px) scale(0.92);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        /* ── Shatter / Disintegration animation ────────────────────────────── */
+        .shattering-card-odd {
+          animation: shatter-odd 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+          pointer-events: none;
+        }
+
+        .shattering-card-even {
+          animation: shatter-even 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+          pointer-events: none;
+        }
+
+        @keyframes shatter-odd {
+          0% {
+            transform: translateY(0) scale(1) rotate(0deg);
+            clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+            opacity: 1;
+          }
+          30% {
+            transform: translateY(-8px) scale(0.98) rotate(3deg);
+            clip-path: polygon(0% 0%, 45% 10%, 100% 0%, 95% 55%, 100% 100%, 55% 95%, 0% 100%, 5% 45%);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateY(350px) scale(0.1) rotate(38deg);
+            clip-path: polygon(25% 35%, 45% 20%, 75% 45%, 60% 70%, 30% 65%);
+            opacity: 0;
+            filter: blur(3px);
+          }
+        }
+
+        @keyframes shatter-even {
+          0% {
+            transform: translateY(0) scale(1) rotate(0deg);
+            clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+            opacity: 1;
+          }
+          30% {
+            transform: translateY(-8px) scale(0.98) rotate(-3deg);
+            clip-path: polygon(0% 0%, 55% 8%, 100% 0%, 90% 45%, 100% 100%, 45% 90%, 0% 100%, 8% 55%);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateY(330px) scale(0.1) rotate(-38deg);
+            clip-path: polygon(15% 25%, 55% 15%, 85% 55%, 50% 80%, 20% 55%);
+            opacity: 0;
+            filter: blur(3px);
+          }
+        }
+
+        .wall-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 24px;
+          height: 100%;
+          padding-top: 24px;
+          padding-bottom: 24px;
+        }
+
+        .featured-badge {
+          background: linear-gradient(90deg, #ec4899, #6e208c);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
         }
       `}</style>
-      {/* Header bar */}
-      <div
-        className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-8 border-b border-white/10 bg-black/70 backdrop-blur-sm"
-        style={{ height: HEADER_H }}
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-2xl"></span>
-          <span className="text-white/80 text-xl font-semibold tracking-wide">Wish Wall</span>
-        </div>
-        {eventId && (
-          <button
-            onClick={() => setShowEventPicker(true)}
-            className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors px-3 py-1 rounded-full border border-white/10 hover:border-white/30 max-w-[240px]"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-              <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-              <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
-            <span className="truncate">{currentEventName || 'Đổi sự kiện'}</span>
-          </button>
-        )}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-            <span className="text-teal-400 text-sm font-medium">LIVE</span>
-          </div>
-          <button
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-            className="text-xs text-white/50 hover:text-white transition-colors border border-white/10 hover:border-white/30 px-3 py-1 rounded-full"
-          >
-            LOGOUT
-          </button>
-        </div>
+
+      {/* Ambient Background Effect */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-transparent to-transparent"></div>
       </div>
 
-      {/* Event picker bottom sheet */}
+      {/* Event Picker Overlay */}
       {showEventPicker && (
         <div
-          className="fixed inset-0 z-50 flex items-end"
+          className="fixed inset-0 z-50 flex items-end justify-center"
           onClick={() => setShowEventPicker(false)}
         >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
           <div
-            className="relative w-full bg-[#0a0a1a] border-t border-white/10 rounded-t-3xl px-5 pt-4 pb-8 max-h-[60vh] overflow-y-auto"
+            className="relative w-full max-w-lg bg-[#0a0a1a] border-t border-white/10 rounded-t-3xl px-5 pt-4 pb-8 max-h-[60vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
@@ -265,16 +384,25 @@ export default function LedScreenPage() {
         </div>
       )}
 
-      {/* Event picker screen (when no eventId in URL) */}
-      {!eventId && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 mt-16 max-w-2xl mx-auto w-full">
-          <h1 className="text-3xl font-bold text-white mb-2 text-center">Màn hình LED Wishwall</h1>
-          <p className="text-white/40 mb-10 text-center">Chọn sự kiện đang diễn ra để bắt đầu hiển thị các lời chúc.</p>
+      {/* Main Content */}
+      {!eventId ? (
+        <>
+          <button 
+            onClick={() => { logout(); navigate('/login'); }}
+            className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-white/70 hover:text-white transition-all group"
+          >
+            <span className="material-symbols-outlined text-[18px] group-hover:text-[#ec4899] transition-colors">logout</span>
+            <span className="text-xs font-bold uppercase tracking-widest">Đăng xuất</span>
+          </button>
+
+          <div className="flex-1 flex flex-col items-center justify-center p-6 mt-16 max-w-2xl mx-auto w-full z-10">
+            <h1 className="text-3xl font-bold text-white mb-2 text-center uppercase tracking-wider font-['Outfit']">Wishwall Live Display</h1>
+            <p className="text-[#bbc9cf] mb-10 text-center text-sm">Chọn sự kiện đang diễn ra để hiển thị các lời chúc.</p>
 
           {ongoingEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 bg-white/5 border border-white/10 rounded-3xl w-full">
               <p className="text-6xl mb-4">📭</p>
-              <p className="text-white/30 italic">Không có sự kiện nào đang diễn ra.</p>
+              <p className="text-white/30 italic text-sm">Không có sự kiện nào đang diễn ra.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 w-full">
@@ -282,26 +410,23 @@ export default function LedScreenPage() {
                 <button
                   key={ev.id}
                   onClick={() => navigate(`/events/${ev.id}/wishwall/led`)}
-                  className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-teal-500 rounded-3xl p-6 transition-all group"
+                  className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00e5ff] rounded-3xl p-6 transition-all group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-white font-bold text-lg group-hover:text-teal-400 transition-colors uppercase tracking-wider">{ev.name}</h3>
+                      <h3 className="text-white font-bold text-lg group-hover:text-[#00e5ff] transition-colors uppercase tracking-wider font-['Outfit']">{ev.name}</h3>
                       <div className="flex items-center gap-3 mt-2">
                         {ev.location && (
                           <div className="flex items-center gap-1.5 text-white/40 text-sm">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span className="material-symbols-outlined text-[14px]">location_on</span>
                             <span>{ev.location}</span>
                           </div>
                         )}
-                        <span className="flex items-center gap-1.5 text-teal-400 text-xs font-bold uppercase tracking-widest">
-                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                        <span className="flex items-center gap-1.5 text-[#00e5ff] text-xs font-bold uppercase tracking-widest">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] animate-pulse" />
                           LIVE
                         </span>
                       </div>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-teal-500/20 group-hover:text-teal-400 transition-all">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
                   </div>
                 </button>
@@ -309,75 +434,116 @@ export default function LedScreenPage() {
             </div>
           )}
         </div>
-      )}
+        </>
+      ) : (
+        <main className="relative z-10 px-[24px] max-w-[1440px] mx-auto pt-[12px] flex-1 overflow-visible h-screen w-full flex flex-col">
+          {/* TopNavBar */}
+          <div className="flex justify-between items-center w-full pt-[24px] border-b border-white/5 pb-[12px] shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="font-['Outfit'] text-[24px] leading-[32px] font-bold bg-gradient-to-r from-[#ec4899] to-[#00e5ff] bg-clip-text text-transparent tracking-tighter">
+                Linkie
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#00e5ff] live-pulse"></span>
+              <span className="font-['Inter'] text-[12px] leading-[16px] text-[#bbc9cf] uppercase tracking-widest font-semibold">
+                {currentEvent?.name || 'Loading Event...'}
+              </span>
+            </div>
+          </div>
 
-      {/* Empty state (when eventId exists but no messages yet) */}
-      {eventId && items.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-full text-white/20">
-          <p className="text-6xl mb-4"></p>
-          <p className="text-xl">Waiting for messages…</p>
-        </div>
-      )}
+          {/* Grid Container */}
+          <div className="flex-1 mt-[24px] pb-[80px] overflow-visible">
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-white/20">
+                {/* No messages */}
+              </div>
+            ) : (
+              <div className="wall-grid">
+                {[0, 1, 2].map(colIdx => (
+                  <div key={colIdx} className="flex flex-col gap-[24px]">
+                    {messages.filter(m => m.colIndex === colIdx).map((msg, idx) => {
+                      const isPositive = msg.sentiment === 'Positive';
+                      const isFeatured = isPositive && idx % 3 === 0; // Simulate featured logic if needed
+                      
+                      const animDelay = `${-((idx * 1.4) % 6)}s`;
+                      const isFlashed = activeFlashId === msg.id;
 
-      {/* Floating bouncing cards */}
-      {items.map(item => (
-        <MessageCard key={item.key} item={item} cardElsRef={cardElsRef} />
-      ))}
+                      // Determine entry and shatter animation classes
+                      let animClass = 'floating-anim';
+                      const now = Date.now();
+                      if (now - msg.addedAt < 2000) {
+                        animClass = 'slide-down-entry';
+                      }
+
+                      let shatterClass = '';
+                      if (isShattering) {
+                        shatterClass = idx % 2 === 0 ? 'shattering-card-even' : 'shattering-card-odd';
+                      }
+
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`glass-card ${isFeatured ? 'pink-glow' : 'cyan-glow'} rounded-[24px] ${animClass} ${shatterClass} ${isFeatured ? 'p-[20px]' : 'p-[24px]'} ${isFlashed ? 'brightness-150 scale-[1.05] shadow-[0_0_20px_rgba(0,229,255,0.7)]' : ''}`}
+                          style={{ animationDuration: '8s', transformOrigin: 'center', animationDelay: animClass === 'slide-down-entry' ? '0s' : animDelay }}
+                          onMouseMove={(e) => {
+                            if (isShattering) return;
+                            const card = e.currentTarget;
+                            const rect = card.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const y = e.clientY - rect.top;
+                            const centerX = rect.width / 2;
+                            const centerY = rect.height / 2;
+                            const rotateX = (y - centerY) / 30;
+                            const rotateY = (centerX - x) / 30;
+                            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+                          }}
+                          onMouseLeave={(e) => {
+                            if (isShattering) return;
+                            e.currentTarget.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
+                          }}
+                        >
+                          {isFeatured ? (
+                            <>
+                              <div>
+                                <div className="flex justify-between items-start mb-[24px]">
+                                  <span className="featured-badge text-[10px] font-bold px-2 py-1 rounded text-white flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[14px]">star</span> Featured
+                                  </span>
+                                  <span className="material-symbols-outlined text-[#ec4899]">favorite</span>
+                                </div>
+                                <p className="font-['Outfit'] text-[20px] leading-[28px] font-semibold text-white leading-tight">"{msg.message}"</p>
+                              </div>
+                              <div className="flex items-center gap-[12px] mt-[24px]">
+                                <div className="w-10 h-10 rounded-full border-2 border-[#ec4899] p-[2px]">
+                                  <img className="w-full h-full object-cover rounded-full" src={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.userName)}&background=0d1117&color=ec4899`} alt={msg.userName} />
+                                </div>
+                                <div>
+                                  <p className="font-['Inter'] text-[12px] leading-[16px] font-semibold text-white">{msg.userName}</p>
+                                  <p className="text-[10px] text-[#ec4899] uppercase tracking-tighter">VIP Attendee</p>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-['Inter'] text-[18px] leading-[28px] font-normal text-[#e5e2e1]">"{msg.message}"</p>
+                              <div className="flex items-center justify-between mt-[24px] border-t border-white/5 pt-[12px]">
+                                <p className="font-['Inter'] text-[12px] leading-[16px] font-semibold text-[#bbc9cf]">— {msg.userName}</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      )}
     </div>
   );
 }
 
-// ── MessageCard ───────────────────────────────────────────────────────────────
 
-function MessageCard({
-  item,
-  cardElsRef,
-}: {
-  item: PhysicsItem;
-  cardElsRef: React.MutableRefObject<Map<string, HTMLDivElement>>;
-}) {
-  const glow = SENTIMENT_GLOW[item.sentiment] ?? 'shadow-white/10';
-  const border = SENTIMENT_BORDER[item.sentiment] ?? 'border-white/20';
-
-  const ref = useCallback(
-    (el: HTMLDivElement | null) => {
-      if (el) cardElsRef.current.set(item.key, el);
-      else cardElsRef.current.delete(item.key);
-    },
-    [item.key, cardElsRef],
-  );
-
-  const isPositive = item.sentiment === 'Positive';
-  const isNeutral = item.sentiment === 'Neutral';
-
-  return (
-    <div
-      ref={ref}
-      className={`absolute top-0 left-0 rounded-2xl border p-5 shadow-2xl ${glow} ${border} overflow-hidden`}
-      style={{
-        width: CARD_W,
-        transform: `translate(${item.x}px, ${item.y}px)`,
-        willChange: 'transform, opacity',
-        background: isPositive 
-          ? 'linear-gradient(135deg, #facc15, #fde047)' 
-          : isNeutral 
-            ? 'linear-gradient(135deg, #1e3a8a, #172554)' 
-            : 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: isPositive || isNeutral ? 'none' : 'blur(8px)',
-      }}
-    >
-      {isPositive && (
-        <div className="absolute inset-0 animate-sparkle pointer-events-none" />
-      )}
-      <p className={`relative z-10 text-lg leading-relaxed mb-3 font-bold ${isPositive ? 'text-[#b91c1c]' : isNeutral ? 'text-[#facc15]' : 'text-white'}`}>
-        {item.message}
-      </p>
-
-      <div className="relative z-10 flex items-center justify-between">
-        <span className={`text-sm font-bold truncate max-w-[90%] ${isPositive ? 'text-[#b91c1c]/80' : isNeutral ? 'text-[#facc15]/80' : 'text-white/70'}`}>
-          — {item.userName}
-        </span>
-      </div>
-    </div>
-  );
-}

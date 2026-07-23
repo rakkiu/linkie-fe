@@ -93,6 +93,14 @@ export default function Navbar() {
         >
           Sự kiện
         </Link>
+        <Link
+          to="/b2b"
+          className={`transition-colors whitespace-nowrap h-full flex items-center border-b-2 ${
+            isActive('/b2b') ? 'text-white border-[#e91e8c]' : 'border-transparent hover:text-white'
+          }`}
+        >
+          Hợp tác sự kiện
+        </Link>
         {user?.role === 'staff' && (
           <Link
             to="/staff/wishwall"

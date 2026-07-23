@@ -151,7 +151,12 @@ export default function LayoutSelectionScreen({
       <div className="mt-8">
         <button
           onClick={() => onConfirm(selectedLayout, selectedFrame)}
-          className="w-full py-4 bg-pink-500 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-pink-500/20"
+          disabled={!selectedFrame}
+          className={`w-full py-4 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg ${
+            selectedFrame 
+              ? 'bg-pink-500 text-white hover:brightness-105 active:scale-[0.98] shadow-pink-500/20' 
+              : 'bg-gray-700 text-gray-400 cursor-not-allowed shadow-none'
+          }`}
         >
           <svg
             width="20"
